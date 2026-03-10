@@ -50,7 +50,7 @@
       <header class="site-header container">
         <a class="brand" href="#top">Coloring Library</a>
         <nav class="header-actions" aria-label="Primary">
-          <a href="#featured">Featured</a>
+          <a href="#spotlight">Spotlight</a>
           <a href="#collections">Books</a>
         </nav>
       </header>
@@ -65,7 +65,7 @@
             </p>
             <div class="hero__actions">
               <a class="button" href="#collections">Browse books</a>
-              <a class="button button--secondary" href="#featured">See the spotlight</a>
+              <a class="button button--secondary" href="#spotlight">See the spotlight</a>
             </div>
             <ul class="hero__badges" aria-label="Highlights">
               <li>Dedicated book pages</li>
@@ -74,17 +74,16 @@
             </ul>
           </div>
 
-          <div class="hero__showcase" aria-hidden="true">
-            <div class="showcase-card showcase-card--primary">
+          <div class="hero__showcase">
+            <div class="showcase-card showcase-card--primary" aria-hidden="true">
               <span class="showcase-card__label">Storybook animals</span>
               <strong>Open a whole book at a time</strong>
               <p>Each collection has its own page for relaxed browsing, quick previews, and easy downloads.</p>
             </div>
-            <div class="showcase-card showcase-card--secondary">
-              <span class="showcase-card__label">Lightweight browsing</span>
-              <strong>Load each page only when you choose it</strong>
-            </div>
-            <div class="showcase-card showcase-card--accent">
+            <section class="showcase-card showcase-card--secondary spotlight-card" id="spotlight" aria-labelledby="spotlightTitle">
+              <div id="spotlightContent"></div>
+            </section>
+            <div class="showcase-card showcase-card--accent" aria-hidden="true">
               <span class="showcase-card__label">Side ads</span>
               <strong>Quiet Google AdSense spaces that stay out of the way</strong>
             </div>
@@ -124,14 +123,6 @@
           </div>
         </section>
 
-        <section class="featured container reveal" id="featured">
-          <div class="section-heading">
-            <p class="eyebrow">Featured pick</p>
-            <h2>Spotlight book</h2>
-          </div>
-          <div id="featuredContent"></div>
-        </section>
-
         <aside class="ad-slot ad-slot--banner container reveal" aria-label="Advertisement">
           <div class="ad-slot__inner">
             <span class="ad-slot__label">Sponsored</span>
@@ -160,6 +151,7 @@
     </div>
 
     <script src="assets/books/library.js"></script>
+    <script src="image-fallback.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

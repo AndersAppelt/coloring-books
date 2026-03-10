@@ -1,3 +1,6 @@
 const { buildDist } = require("./build-site");
 
-buildDist();
+buildDist().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

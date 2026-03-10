@@ -1,0 +1,12 @@
+{
+  "name": "coloring-books",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-site.js",
+    "build:dist": "node scripts/build-dist.js",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}

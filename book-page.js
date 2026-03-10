@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  window.ColoringImageFallbacks?.initialize(document);
   observeReveals();
   initializePreviewDialog();
   initializeAds();
@@ -60,7 +61,7 @@ function initializePreviewDialog() {
   });
 
   dialog.addEventListener("close", () => {
-    previewImage.removeAttribute("src");
+    window.ColoringImageFallbacks?.clearImage(previewImage);
     previewImage.alt = "";
     previewTitle.textContent = "Coloring page preview";
     openImageLink.setAttribute("href", "#");
@@ -72,6 +73,7 @@ function initializePreviewDialog() {
 
 function openPreview(dialog, trigger, previewImage, previewTitle, openImageLink, downloadImageLink, downloadPdfLink) {
   const imageHref = trigger.getAttribute("href");
+  const previewHref = trigger.dataset.previewImage || imageHref;
   const imageTitle = trigger.dataset.previewTitle || "Coloring page preview";
   const pdfHref = trigger.dataset.previewPdf || "";
 
@@ -85,8 +87,8 @@ function openPreview(dialog, trigger, previewImage, previewTitle, openImageLink,
   }
 
   previewTitle.textContent = imageTitle;
-  previewImage.src = imageHref;
   previewImage.alt = imageTitle;
+  window.ColoringImageFallbacks?.setImageSource(previewImage, previewHref, imageHref);
   openImageLink.setAttribute("href", imageHref);
   downloadImageLink.setAttribute("href", imageHref);
 

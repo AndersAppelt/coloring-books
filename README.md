@@ -56,12 +56,20 @@ window.BOOK_CATALOG = [
 
 Only `name` is needed if you are happy with the default title generated from the folder name.
 
+## Install
+
+Install the build dependency first:
+
+```bash
+npm install
+```
+
 ## Build step
 
 After adding or removing files in `assets/books`, regenerate the site:
 
 ```bash
-node scripts/build-site.js
+npm run build
 ```
 
 For backward compatibility, this also works:
@@ -69,6 +77,16 @@ For backward compatibility, this also works:
 ```bash
 node scripts/build-book-manifest.js
 ```
+
+Local builds keep every rendered image pointed at the original source file.
+
+To produce the deployable site with generated preview thumbnails:
+
+```bash
+npm run build:dist
+```
+
+That writes a fresh `dist/` folder, keeps the original images for downloads and fallback, and adds preview thumbnails under `dist/assets/books/<theme>/thumbs/`.
 
 ## What gets generated
 
@@ -93,3 +111,11 @@ To connect real ads:
 The old homepage spotlight was choosing the first page in a book, so UUID-style filenames turned into titles like `Page 01`.
 Now the homepage spotlight is book-based, not page-based, and links to the dedicated book page.
 
+## CI deploy flow
+
+The GitHub Actions deploy job now:
+
+1. runs `npm ci`
+2. runs `npm test`
+3. runs `npm run build:dist`
+4. uploads the prebuilt `dist/` folder to Azure Static Web Apps

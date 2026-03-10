@@ -3,12 +3,11 @@ const path = require("path");
 const vm = require("vm");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const SOURCE_BOOK_ASSETS_ROOT = path.join(PROJECT_ROOT, "assets", "books");
-const SOURCE_CATALOG_PATH = path.join(SOURCE_BOOK_ASSETS_ROOT, "catalog.js");
-const STATIC_FILES = ["index.html", "styles.css", "script.js", "book-page.js", "favicon.svg"];
+const STATIC_FILES = ["index.html", "styles.css", "script.js", "book-page.js", "image-fallback.js", "favicon.svg"];
 
 const FALLBACK_ACCENTS = ["#d86d4c", "#5e7f63", "#3a7d80", "#c38a3f", "#9b5d7b"];
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
+const THUMBNAIL_SOURCE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif"]);
 const PDF_EXTENSIONS = new Set([".pdf"]);
 const COVER_NAMES = new Set(["cover", "front-cover", "front_cover", "thumbnail", "thumb"]);
 const BOOK_PDF_HINTS = ["book", "collection", "pages", "printable", "full"];
@@ -17,18 +16,25 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const INLINE_AD_INTERVAL = 6;
 
 if (require.main === module) {
-  buildSite();
+  buildSite().catch(handleFatalError);
 }
 
-module.exports = { buildSite, buildDist };
+module.exports = {
+  buildSite,
+  buildDist,
+  collectThumbnailJobs,
+  getThumbnailAssetPath,
+  resolveBuildOptions,
+  resolvePreviewAssetPath,
+};
 
-function buildSite(options = {}) {
+async function buildSite(options = {}) {
   const settings = resolveBuildOptions(options);
   prepareOutputRoot(settings);
 
   const manualCatalog = loadManualCatalog(settings.catalogPath);
   const discoveredThemes = scanThemeFolders(settings.sourceBookAssetsRoot);
-  const library = normalizeCatalog(mergeCatalogSources(manualCatalog, discoveredThemes));
+  const library = normalizeCatalog(mergeCatalogSources(manualCatalog, discoveredThemes), settings);
   const generatedAt = new Date().toISOString();
 
   if (settings.copyStaticFiles) {
@@ -37,6 +43,11 @@ function buildSite(options = {}) {
 
   if (settings.copyReferencedAssets) {
     copyReferencedAssets(library, settings);
+  }
+
+  const thumbnailJobs = settings.generateThumbnails ? collectThumbnailJobs(library, settings) : [];
+  if (thumbnailJobs.length) {
+    await generateThumbnails(thumbnailJobs, settings);
   }
 
   if (settings.writeManifest) {
@@ -62,8 +73,9 @@ function buildSite(options = {}) {
 
   return {
     books: library,
-    outputRoot: settings.outputRoot,
     copiedAssetCount: settings.copyReferencedAssets ? collectReferencedAssetPaths(library).size : 0,
+    generatedThumbnailCount: thumbnailJobs.length,
+    outputRoot: settings.outputRoot,
   };
 }
 
@@ -73,9 +85,16 @@ function buildDist(options = {}) {
     cleanOutput: true,
     copyStaticFiles: true,
     copyReferencedAssets: true,
+    generateThumbnails: true,
+    preferThumbnails: true,
     writeManifest: false,
     ...options,
   });
+}
+
+function handleFatalError(error) {
+  console.error(error);
+  process.exitCode = 1;
 }
 
 function describeOutputRoot(outputRoot) {
@@ -91,23 +110,28 @@ function describeOutputRoot(outputRoot) {
 
 function resolveBuildOptions(options) {
   const sourceRoot = path.resolve(options.sourceRoot || PROJECT_ROOT);
-  const outputRoot = path.resolve(options.outputRoot || PROJECT_ROOT);
+  const outputRoot = path.resolve(options.outputRoot || sourceRoot);
   const sourceBookAssetsRoot = path.join(sourceRoot, "assets", "books");
   const outputBookAssetsRoot = path.join(outputRoot, "assets", "books");
+  const writesIntoSourceRoot = pathsEqual(sourceRoot, outputRoot);
+  const preferThumbnails = Boolean(options.preferThumbnails);
 
   return {
-    sourceRoot,
-    outputRoot,
-    sourceBookAssetsRoot,
-    catalogPath: path.join(sourceBookAssetsRoot, "catalog.js"),
-    generatedPagesRoot: path.join(outputRoot, "books"),
-    outputBookAssetsRoot,
-    manifestOutput: path.join(outputBookAssetsRoot, "manifest.js"),
-    libraryOutput: path.join(outputBookAssetsRoot, "library.js"),
     cleanOutput: Boolean(options.cleanOutput),
-    copyStaticFiles: options.copyStaticFiles ?? outputRoot !== PROJECT_ROOT,
-    copyReferencedAssets: options.copyReferencedAssets ?? outputRoot !== PROJECT_ROOT,
-    writeManifest: options.writeManifest ?? outputRoot === PROJECT_ROOT,
+    catalogPath: path.join(sourceBookAssetsRoot, "catalog.js"),
+    copyReferencedAssets: options.copyReferencedAssets ?? !writesIntoSourceRoot,
+    copyStaticFiles: options.copyStaticFiles ?? !writesIntoSourceRoot,
+    generateThumbnails: Boolean(options.generateThumbnails ?? preferThumbnails),
+    generatedPagesRoot: path.join(outputRoot, "books"),
+    libraryOutput: path.join(outputBookAssetsRoot, "library.js"),
+    manifestOutput: path.join(outputBookAssetsRoot, "manifest.js"),
+    outputBookAssetsRoot,
+    outputRoot,
+    preferThumbnails,
+    sourceBookAssetsRoot,
+    sourceRoot,
+    thumbnailMaxEdge: Number.isFinite(options.thumbnailMaxEdge) ? options.thumbnailMaxEdge : 1024,
+    writeManifest: options.writeManifest ?? writesIntoSourceRoot,
   };
 }
 
@@ -172,6 +196,39 @@ function collectReferencedAssetPaths(library) {
   return assetPaths;
 }
 
+function collectThumbnailJobs(library, settings) {
+  const jobsByDestination = new Map();
+
+  library.forEach((book) => {
+    addThumbnailJob(jobsByDestination, book.cover, settings);
+
+    book.items.forEach((item) => {
+      addThumbnailJob(jobsByDestination, item.image, settings);
+    });
+  });
+
+  return [...jobsByDestination.values()];
+}
+
+function addThumbnailJob(jobsByDestination, assetPathValue, settings) {
+  const sourceAssetPath = normalizeProjectAssetPath(assetPathValue);
+  const previewAssetPath = normalizeProjectAssetPath(resolvePreviewAssetPath(assetPathValue, settings));
+
+  if (!sourceAssetPath || !previewAssetPath || sourceAssetPath === previewAssetPath) {
+    return;
+  }
+
+  const sourcePath = path.join(settings.sourceRoot, sourceAssetPath);
+  const destinationPath = path.join(settings.outputRoot, previewAssetPath);
+
+  jobsByDestination.set(destinationPath, {
+    destinationPath,
+    previewAssetPath,
+    sourceAssetPath,
+    sourcePath,
+  });
+}
+
 function addLocalAssetPath(assetPaths, value) {
   const normalizedPath = normalizeProjectAssetPath(value);
   if (normalizedPath) {
@@ -190,6 +247,59 @@ function normalizeProjectAssetPath(value) {
 
   const normalizedValue = value.replace(/\\/g, "/").replace(/^\//, "");
   return normalizedValue.startsWith("assets/") ? normalizedValue : "";
+}
+
+function getThumbnailAssetPath(value) {
+  const normalizedPath = normalizeProjectAssetPath(value);
+  if (!normalizedPath) {
+    return "";
+  }
+
+  const extension = path.extname(normalizedPath).toLowerCase();
+  if (!THUMBNAIL_SOURCE_EXTENSIONS.has(extension)) {
+    return "";
+  }
+
+  const directory = path.posix.dirname(normalizedPath);
+  const fileName = path.posix.basename(normalizedPath, extension);
+  return path.posix.join(directory, "thumbs", `${fileName}.webp`);
+}
+
+function resolvePreviewAssetPath(value, settings = {}) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  if (!settings.preferThumbnails) {
+    return value;
+  }
+
+  return getThumbnailAssetPath(value) || value;
+}
+
+async function generateThumbnails(thumbnailJobs, settings) {
+  let sharp;
+
+  try {
+    sharp = require("sharp");
+  } catch (error) {
+    throw new Error("Generating thumbnails requires the `sharp` package to be installed.", { cause: error });
+  }
+
+  for (const job of thumbnailJobs) {
+    ensureDirectory(path.dirname(job.destinationPath));
+
+    await sharp(job.sourcePath)
+      .rotate()
+      .resize({
+        fit: "inside",
+        height: settings.thumbnailMaxEdge,
+        width: settings.thumbnailMaxEdge,
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 82 })
+      .toFile(job.destinationPath);
+  }
 }
 
 function loadManualCatalog(catalogPath) {
@@ -250,18 +360,18 @@ function buildDiscoveredTheme(bookAssetsRoot, themeName) {
     const itemPdf = perPagePdfByBaseName.get(baseName.toLowerCase());
 
     return {
-      title: humanizeAssetName(baseName, index),
       image: assetPath(themeName, file),
       pdf: itemPdf ? assetPath(themeName, itemPdf) : "",
+      title: humanizeAssetName(baseName, index),
     };
   });
 
   return {
-    name: themeName,
     cover: coverFile ? assetPath(themeName, coverFile) : "",
     hasExplicitCover: Boolean(coverFile),
-    pdf: bookPdfFile ? assetPath(themeName, bookPdfFile) : "",
     items,
+    name: themeName,
+    pdf: bookPdfFile ? assetPath(themeName, bookPdfFile) : "",
   };
 }
 
@@ -302,6 +412,12 @@ function mergeThemeData(entry, discoveredTheme) {
   return {
     ...safeDiscoveredTheme,
     ...safeEntry,
+    accent: safeEntry.accent || safeDiscoveredTheme.accent || "",
+    cover: safeEntry.cover || safeDiscoveredTheme.cover || "",
+    description: safeEntry.description || safeDiscoveredTheme.description || "",
+    featured: Boolean(safeEntry.featured || safeDiscoveredTheme.featured),
+    hasExplicitCover: Boolean(safeEntry.cover || safeEntry.hasExplicitCover || safeDiscoveredTheme.hasExplicitCover),
+    items: manualItems.length ? manualItems : discoveredItems,
     name:
       safeEntry.name ||
       safeEntry.slug ||
@@ -309,25 +425,19 @@ function mergeThemeData(entry, discoveredTheme) {
       safeDiscoveredTheme.slug ||
       safeDiscoveredTheme.title ||
       "",
-    title: safeEntry.title || safeDiscoveredTheme.title || "",
-    description: safeEntry.description || safeDiscoveredTheme.description || "",
-    accent: safeEntry.accent || safeDiscoveredTheme.accent || "",
-    cover: safeEntry.cover || safeDiscoveredTheme.cover || "",
-    hasExplicitCover: Boolean(safeEntry.cover || safeEntry.hasExplicitCover || safeDiscoveredTheme.hasExplicitCover),
     pdf: safeEntry.pdf || safeDiscoveredTheme.pdf || "",
-    featured: Boolean(safeEntry.featured || safeDiscoveredTheme.featured),
     tags: mergeTags(safeEntry.tags, safeDiscoveredTheme.tags),
-    items: manualItems.length ? manualItems : discoveredItems,
+    title: safeEntry.title || safeDiscoveredTheme.title || "",
   };
 }
 
-function normalizeCatalog(catalog) {
+function normalizeCatalog(catalog, settings) {
   return catalog
-    .map((entry, index) => normalizeTheme(entry, index))
+    .map((entry, index) => normalizeTheme(entry, index, settings))
     .filter((book) => book && (book.items.length || book.cover || book.pdf));
 }
 
-function normalizeTheme(entry, index) {
+function normalizeTheme(entry, index, settings) {
   if (!entry || typeof entry !== "object") {
     return null;
   }
@@ -335,59 +445,71 @@ function normalizeTheme(entry, index) {
   const slug = slugify(entry.name || entry.slug || entry.title || `book-${index + 1}`);
   const folder = `assets/books/${slug}`;
   const items = Array.isArray(entry.items)
-    ? entry.items.map((item, itemIndex) => normalizeItem(item, folder, itemIndex)).filter(Boolean)
+    ? entry.items.map((item, itemIndex) => normalizeItem(item, folder, itemIndex, settings)).filter(Boolean)
     : [];
   const explicitCover = resolveAssetPath(entry.cover, folder);
+  const listingImage = explicitCover || items[0]?.image || "";
+  const listingImagePreview = explicitCover
+    ? resolvePreviewAssetPath(explicitCover, settings)
+    : items[0]?.previewImage || listingImage;
   const title = entry.title || prettifySlug(slug);
 
   return {
-    id: slug,
-    name: entry.name || slug,
-    title,
-    description: entry.description || "",
     accent: entry.accent || FALLBACK_ACCENTS[index % FALLBACK_ACCENTS.length],
     cover: explicitCover || "",
-    hasExplicitCover: Boolean(explicitCover || entry.hasExplicitCover),
-    pdf: resolveAssetPath(entry.pdf, folder),
+    coverPreview: resolvePreviewAssetPath(explicitCover, settings),
+    description: entry.description || "",
     featured: Boolean(entry.featured),
-    tags: normalizeTags(entry.tags),
+    hasExplicitCover: Boolean(explicitCover || entry.hasExplicitCover),
+    id: slug,
     items,
+    listingImage,
+    listingImagePreview,
+    name: entry.name || slug,
     pageCount: items.length,
     pageUrl: `books/${slug}.html`,
+    pdf: resolveAssetPath(entry.pdf, folder),
+    tags: normalizeTags(entry.tags),
+    title,
   };
 }
 
-function normalizeItem(item, folder, index) {
+function normalizeItem(item, folder, index, settings) {
   if (!item || typeof item !== "object") {
     return null;
   }
 
-  const baseName = item.image ? stripExtension(path.basename(item.image)) : "";
+  const imagePath = resolveAssetPath(item.image, folder);
+  const baseName = imagePath ? stripExtension(path.basename(imagePath)) : "";
 
   return {
-    title: item.title || humanizeAssetName(baseName, index),
     description: item.description || "",
-    image: resolveAssetPath(item.image, folder),
-    pdf: resolveAssetPath(item.pdf, folder),
     featured: Boolean(item.featured),
+    image: imagePath,
+    pdf: resolveAssetPath(item.pdf, folder),
+    previewImage: resolvePreviewAssetPath(imagePath, settings),
     tags: normalizeTags(item.tags),
+    title: item.title || humanizeAssetName(baseName, index),
   };
 }
 
 function summarizeBookForLibrary(book) {
   return {
-    id: book.id,
-    name: book.name,
-    title: book.title,
-    description: book.description,
     accent: book.accent,
     cover: book.cover,
-    hasExplicitCover: book.hasExplicitCover,
-    pdf: book.pdf,
+    coverPreview: book.coverPreview,
+    description: book.description,
     featured: book.featured,
-    tags: book.tags,
+    hasExplicitCover: book.hasExplicitCover,
+    id: book.id,
+    listingImage: book.listingImage,
+    listingImagePreview: book.listingImagePreview,
+    name: book.name,
     pageCount: book.pageCount,
     pageUrl: book.pageUrl,
+    pdf: book.pdf,
+    tags: book.tags,
+    title: book.title,
   };
 }
 
@@ -395,7 +517,8 @@ function renderBookPage(book) {
   const pageTitle = `${book.title} | Coloring Library`;
   const pageCount = book.items.length;
   const pageDescription = book.description || `Browse ${pageCount} printable coloring pages from ${book.title}.`;
-  const heroImage = book.cover ? toBookPagePath(book.cover) : "";
+  const heroPreviewImage = book.coverPreview ? toBookPagePath(book.coverPreview) : "";
+  const heroFullImage = book.cover ? toBookPagePath(book.cover) : "";
   const galleryMarkup = [];
   const structuredData = serializeStructuredData(buildBookStructuredData(book));
 
@@ -464,8 +587,15 @@ function renderBookPage(book) {
           </div>
           <div class="book-hero__visual">
             ${
-              heroImage
-                ? `<img src="${escapeAttribute(heroImage)}" alt="${escapeAttribute(book.title)} cover" loading="eager" decoding="async" fetchpriority="high" />`
+              heroFullImage
+                ? renderImageWithFallback({
+                    alt: `${book.title} cover`,
+                    fallbackMarkup: renderBookArt(book, pageCount, "hero"),
+                    fetchPriority: "high",
+                    fullSrc: heroFullImage,
+                    loading: "eager",
+                    previewSrc: heroPreviewImage || heroFullImage,
+                  })
                 : renderBookArt(book, pageCount, "hero")
             }
           </div>
@@ -515,6 +645,7 @@ function renderBookPage(book) {
 
     ${renderPreviewDialog()}
 
+    <script src="../image-fallback.js"></script>
     <script src="../book-page.js"></script>
   </body>
 </html>
@@ -534,34 +665,73 @@ function renderBookArt(book, pageCount, variant) {
 }
 
 function renderGalleryCard(item) {
-  const imagePath = toBookPagePath(item.image);
+  const fullImagePath = toBookPagePath(item.image);
+  const previewImagePath = toBookPagePath(item.previewImage || item.image);
   const pdfPath = toBookPagePath(item.pdf);
   const showTitle = !isGenericPageTitle(item.title);
 
   return `
     <article class="gallery-card reveal">
       <div class="gallery-card__media">
-        <div class="page-card__placeholder gallery-card__placeholder">
-          <span class="pill">${escapeHtml(item.title)}</span>
-          <strong>${showTitle ? escapeHtml(item.title) : "Open this coloring page"}</strong>
-          <p>Preview loads only when selected.</p>
-        </div>
+        ${
+          fullImagePath
+            ? renderImageWithFallback({
+                alt: item.title,
+                fallbackMarkup: renderGalleryFallback(item, showTitle),
+                fullSrc: fullImagePath,
+                loading: "lazy",
+                previewSrc: previewImagePath || fullImagePath,
+              })
+            : renderGalleryFallback(item, showTitle)
+        }
       </div>
       <div class="gallery-card__content">
         ${showTitle ? `<h3 class="gallery-card__title">${escapeHtml(item.title)}</h3>` : ""}
         <div class="page-card__actions">
           ${
-            imagePath
-              ? `<a class="page-card__link" href="${escapeAttribute(imagePath)}" data-preview-trigger data-preview-title="${escapeAttribute(item.title)}"${
+            fullImagePath
+              ? `<a class="page-card__link" href="${escapeAttribute(fullImagePath)}" data-preview-trigger data-preview-image="${escapeAttribute(
+                  previewImagePath || fullImagePath
+                )}" data-preview-title="${escapeAttribute(item.title)}"${
                   pdfPath ? ` data-preview-pdf="${escapeAttribute(pdfPath)}"` : ""
                 }>Preview image</a>`
               : ""
           }
-          ${imagePath ? `<a class="page-card__link" href="${escapeAttribute(imagePath)}" download>Download image</a>` : ""}
+          ${fullImagePath ? `<a class="page-card__link" href="${escapeAttribute(fullImagePath)}" download>Download image</a>` : ""}
           ${pdfPath ? `<a class="page-card__link" href="${escapeAttribute(pdfPath)}" download>Download PDF</a>` : ""}
         </div>
       </div>
     </article>
+  `;
+}
+
+function renderGalleryFallback(item, showTitle) {
+  return `
+    <div class="page-card__placeholder gallery-card__placeholder" aria-hidden="true">
+      <span class="pill">${escapeHtml(item.title)}</span>
+      <strong>${showTitle ? escapeHtml(item.title) : "Preview unavailable"}</strong>
+      <p>Open the original image below if the preview does not load.</p>
+    </div>
+  `;
+}
+
+function renderImageWithFallback({ alt, fallbackMarkup, fetchPriority = "", fullSrc, loading = "lazy", previewSrc }) {
+  const effectivePreviewSrc = previewSrc || fullSrc;
+  const effectiveFullSrc = fullSrc || previewSrc;
+  const fetchPriorityAttribute = fetchPriority ? ` fetchpriority="${escapeAttribute(fetchPriority)}"` : "";
+
+  return `
+    <div class="image-fallback" data-image-fallback-root>
+      ${fallbackMarkup ? `<div class="image-fallback__content" data-image-fallback-content aria-hidden="true">${fallbackMarkup}</div>` : ""}
+      <img
+        src="${escapeAttribute(effectivePreviewSrc)}"
+        data-preview-src="${escapeAttribute(effectivePreviewSrc)}"
+        data-full-src="${escapeAttribute(effectiveFullSrc)}"
+        alt="${escapeAttribute(alt)}"
+        loading="${escapeAttribute(loading)}"
+        decoding="async"${fetchPriorityAttribute}
+      />
+    </div>
   `;
 }
 
@@ -575,7 +745,14 @@ function renderPreviewDialog() {
           <h2 class="image-dialog__title" id="imagePreviewTitle" data-preview-title>Coloring page preview</h2>
         </div>
         <div class="image-dialog__media">
-          <img data-preview-image alt="" />
+          <div class="image-fallback" data-image-fallback-root>
+            <div class="page-card__placeholder image-dialog__placeholder" data-image-fallback-content aria-hidden="true">
+              <span class="pill">Preview</span>
+              <strong>Preview unavailable</strong>
+              <p>Open the original image if the preview cannot be shown.</p>
+            </div>
+            <img data-preview-image alt="" hidden />
+          </div>
         </div>
         <div class="page-card__actions image-dialog__actions">
           <a class="button" href="#" data-open-image target="_blank" rel="noopener">Open original</a>
@@ -607,27 +784,27 @@ function buildBookStructuredData(book) {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: book.title,
+    about: [book.title, ...book.tags].slice(0, 8).map((tag) => ({
+      "@type": "Thing",
+      name: tag,
+    })),
     description: book.description || `Browse ${book.items.length} printable coloring pages from ${book.title}.`,
     inLanguage: "en",
     isPartOf: {
       "@type": "WebSite",
       name: "Coloring Library",
     },
-    about: [book.title, ...book.tags].slice(0, 8).map((tag) => ({
-      "@type": "Thing",
-      name: tag,
-    })),
     mainEntity: {
       "@type": "ItemList",
-      name: `${book.title} coloring pages`,
-      numberOfItems: book.items.length,
       itemListElement: book.items.slice(0, 24).map((item, index) => ({
         "@type": "ListItem",
-        position: index + 1,
         name: item.title,
+        position: index + 1,
       })),
+      name: `${book.title} coloring pages`,
+      numberOfItems: book.items.length,
     },
+    name: book.title,
   };
 }
 
@@ -746,11 +923,15 @@ function slugify(value) {
 }
 
 function mergeTags(primaryTags, fallbackTags) {
-  return [...new Set([...(normalizeTags(primaryTags)), ...(normalizeTags(fallbackTags))])];
+  return [...new Set([...(normalizeTags(primaryTags)), ...normalizeTags(fallbackTags)])];
 }
 
 function normalizeTags(tags) {
   return Array.isArray(tags) ? tags.filter((tag) => typeof tag === "string") : [];
+}
+
+function pathsEqual(left, right) {
+  return path.resolve(left).toLowerCase() === path.resolve(right).toLowerCase();
 }
 
 function escapeHtml(value) {
@@ -758,11 +939,10 @@ function escapeHtml(value) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
+    .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
 
 function escapeAttribute(value) {
   return escapeHtml(value);
 }
-
