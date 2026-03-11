@@ -86,7 +86,7 @@ To produce the deployable site with generated preview thumbnails:
 npm run build:dist
 ```
 
-That writes a fresh `dist/` folder, keeps the original images for downloads and fallback, and adds preview thumbnails under `dist/assets/books/<theme>/thumbs/`.
+That writes a fresh `dist/` folder, generates preview thumbnails under `dist/assets/books/<theme>/thumbs/`, and rewrites full-size image and PDF links to GitHub Raw URLs so SWA does not need to host the original assets.
 
 ## What gets generated
 

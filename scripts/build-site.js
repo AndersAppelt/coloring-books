@@ -14,6 +14,7 @@ const BOOK_PDF_HINTS = ["book", "collection", "pages", "printable", "full"];
 const PLACEHOLDER_HINTS = ["placeholder", "sample", "thumbs.db", ".ds_store"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const INLINE_AD_INTERVAL = 6;
+const DEFAULT_DIST_EXTERNAL_ASSET_BASE_URL = "https://raw.githubusercontent.com/AndersAppelt/coloring-books/main/";
 
 if (require.main === module) {
   buildSite().catch(handleFatalError);
@@ -34,7 +35,8 @@ async function buildSite(options = {}) {
 
   const manualCatalog = loadManualCatalog(settings.catalogPath);
   const discoveredThemes = scanThemeFolders(settings.sourceBookAssetsRoot);
-  const library = normalizeCatalog(mergeCatalogSources(manualCatalog, discoveredThemes), settings);
+  const sourceLibrary = normalizeCatalog(mergeCatalogSources(manualCatalog, discoveredThemes), settings);
+  const library = applyOutputAssetStrategy(sourceLibrary, settings);
   const generatedAt = new Date().toISOString();
 
   if (settings.copyStaticFiles) {
@@ -45,7 +47,7 @@ async function buildSite(options = {}) {
     copyReferencedAssets(library, settings);
   }
 
-  const thumbnailJobs = settings.generateThumbnails ? collectThumbnailJobs(library, settings) : [];
+  const thumbnailJobs = settings.generateThumbnails ? collectThumbnailJobs(sourceLibrary, settings) : [];
   if (thumbnailJobs.length) {
     await generateThumbnails(thumbnailJobs, settings);
   }
@@ -85,6 +87,9 @@ function buildDist(options = {}) {
     cleanOutput: true,
     copyStaticFiles: true,
     copyReferencedAssets: true,
+    externalAssetBaseUrl: DEFAULT_DIST_EXTERNAL_ASSET_BASE_URL,
+    externalizeImages: true,
+    externalizePdfs: true,
     generateThumbnails: true,
     preferThumbnails: true,
     writeManifest: false,
@@ -115,12 +120,22 @@ function resolveBuildOptions(options) {
   const outputBookAssetsRoot = path.join(outputRoot, "assets", "books");
   const writesIntoSourceRoot = pathsEqual(sourceRoot, outputRoot);
   const preferThumbnails = Boolean(options.preferThumbnails);
+  const externalAssetBaseUrl = normalizeExternalAssetBaseUrl(options.externalAssetBaseUrl);
+  const externalizeImages = Boolean(options.externalizeImages);
+  const externalizePdfs = Boolean(options.externalizePdfs);
+
+  if ((externalizeImages || externalizePdfs) && !externalAssetBaseUrl) {
+    throw new Error("External asset rewriting requires `externalAssetBaseUrl` to be configured.");
+  }
 
   return {
     cleanOutput: Boolean(options.cleanOutput),
     catalogPath: path.join(sourceBookAssetsRoot, "catalog.js"),
     copyReferencedAssets: options.copyReferencedAssets ?? !writesIntoSourceRoot,
     copyStaticFiles: options.copyStaticFiles ?? !writesIntoSourceRoot,
+    externalAssetBaseUrl,
+    externalizeImages: externalizeImages && Boolean(externalAssetBaseUrl),
+    externalizePdfs: externalizePdfs && Boolean(externalAssetBaseUrl),
     generateThumbnails: Boolean(options.generateThumbnails ?? preferThumbnails),
     generatedPagesRoot: path.join(outputRoot, "books"),
     libraryOutput: path.join(outputBookAssetsRoot, "library.js"),
@@ -133,6 +148,14 @@ function resolveBuildOptions(options) {
     thumbnailMaxEdge: Number.isFinite(options.thumbnailMaxEdge) ? options.thumbnailMaxEdge : 1024,
     writeManifest: options.writeManifest ?? writesIntoSourceRoot,
   };
+}
+
+function normalizeExternalAssetBaseUrl(value) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  return `${value.replace(/\/+$/, "")}/`;
 }
 
 function prepareOutputRoot(settings) {
@@ -491,6 +514,65 @@ function normalizeItem(item, folder, index, settings) {
     tags: normalizeTags(item.tags),
     title: item.title || humanizeAssetName(baseName, index),
   };
+}
+
+function applyOutputAssetStrategy(library, settings) {
+  return library.map((book) => {
+    const items = book.items.map((item) => ({
+      ...item,
+      image: resolveOutputImageAssetPath(item.image, settings),
+      pdf: resolveOutputPdfAssetPath(item.pdf, settings),
+      previewImage: resolveOutputPreviewAssetPath(item.previewImage, settings),
+    }));
+
+    return {
+      ...book,
+      cover: resolveOutputImageAssetPath(book.cover, settings),
+      coverPreview: resolveOutputPreviewAssetPath(book.coverPreview, settings),
+      items,
+      listingImage: resolveOutputImageAssetPath(book.listingImage, settings),
+      listingImagePreview: resolveOutputPreviewAssetPath(book.listingImagePreview, settings),
+      pdf: resolveOutputPdfAssetPath(book.pdf, settings),
+    };
+  });
+}
+
+function resolveOutputImageAssetPath(value, settings) {
+  return resolveExternalAssetPath(value, settings.externalizeImages, settings);
+}
+
+function resolveOutputPdfAssetPath(value, settings) {
+  return resolveExternalAssetPath(value, settings.externalizePdfs, settings);
+}
+
+function resolveOutputPreviewAssetPath(value, settings) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  if (isThumbnailAssetPath(value)) {
+    return value;
+  }
+
+  return resolveOutputImageAssetPath(value, settings);
+}
+
+function resolveExternalAssetPath(value, shouldExternalize, settings) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  const normalizedPath = normalizeProjectAssetPath(value);
+  if (!normalizedPath || !shouldExternalize) {
+    return value;
+  }
+
+  return `${settings.externalAssetBaseUrl}${normalizedPath}`;
+}
+
+function isThumbnailAssetPath(value) {
+  const normalizedPath = normalizeProjectAssetPath(value);
+  return Boolean(normalizedPath && normalizedPath.includes("/thumbs/"));
 }
 
 function summarizeBookForLibrary(book) {

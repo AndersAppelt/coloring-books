@@ -38,6 +38,7 @@ test("spotlight selection prioritizes visible and featured books before global f
 
 test("local and dist builds emit the expected preview/original image references", async () => {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "coloring-books-build-test-"));
+  const externalAssetBaseUrl = "https://raw.githubusercontent.com/example/coloring-books/main/";
 
   try {
     const sourceRoot = path.join(tempRoot, "source");
@@ -79,6 +80,9 @@ test("local and dist builds emit the expected preview/original image references"
       cleanOutput: true,
       copyReferencedAssets: true,
       copyStaticFiles: true,
+      externalAssetBaseUrl,
+      externalizeImages: true,
+      externalizePdfs: true,
       generateThumbnails: true,
       preferThumbnails: true,
       writeManifest: false,
@@ -89,19 +93,34 @@ test("local and dist builds emit the expected preview/original image references"
     const distFallbackBook = distLibrary.books.find((book) => book.id === "sample-book");
     const distBookPage = await fs.readFile(path.join(distOutputRoot, "books", "test-book.html"), "utf8");
 
-    assert.equal(distBook.cover, "assets/books/test-book/cover.png");
+    assert.equal(distBook.cover, `${externalAssetBaseUrl}assets/books/test-book/cover.png`);
     assert.equal(distBook.coverPreview, "assets/books/test-book/thumbs/cover.webp");
-    assert.equal(distBook.listingImage, "assets/books/test-book/cover.png");
+    assert.equal(distBook.listingImage, `${externalAssetBaseUrl}assets/books/test-book/cover.png`);
     assert.equal(distBook.listingImagePreview, "assets/books/test-book/thumbs/cover.webp");
-    assert.equal(distFallbackBook.listingImage, "assets/books/sample-book/page-01.png");
+    assert.equal(distBook.pdf, `${externalAssetBaseUrl}assets/books/test-book/book.pdf`);
+    assert.equal(distFallbackBook.listingImage, `${externalAssetBaseUrl}assets/books/sample-book/page-01.png`);
     assert.equal(distFallbackBook.listingImagePreview, "assets/books/sample-book/thumbs/page-01.webp");
     assert.match(distBookPage, /src="\.\.\/assets\/books\/test-book\/thumbs\/page-01\.webp"/);
-    assert.match(distBookPage, /data-full-src="\.\.\/assets\/books\/test-book\/page-01\.png"/);
-    assert.match(distBookPage, /href="\.\.\/assets\/books\/test-book\/page-01\.png" data-preview-trigger data-preview-image="\.\.\/assets\/books\/test-book\/thumbs\/page-01\.webp"/);
+    assert.match(
+      distBookPage,
+      /data-full-src="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/page-01\.png"/
+    );
+    assert.match(
+      distBookPage,
+      /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/page-01\.png" data-preview-trigger data-preview-image="\.\.\/assets\/books\/test-book\/thumbs\/page-01\.webp"/
+    );
+    assert.match(
+      distBookPage,
+      /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/book\.pdf" download>Download full book<\/a>/
+    );
 
     await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "thumbs", "cover.webp"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "thumbs", "page-01.webp"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "sample-book", "thumbs", "page-01.webp"));
+    await assert.rejects(fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "cover.png")));
+    await assert.rejects(fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "page-01.png")));
+    await assert.rejects(fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "book.pdf")));
+    await assert.rejects(fs.access(path.join(distOutputRoot, "assets", "books", "sample-book", "page-01.png")));
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
