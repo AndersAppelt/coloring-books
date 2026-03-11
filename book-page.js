@@ -1,9 +1,11 @@
-document.addEventListener("DOMContentLoaded", () => {
-  window.ColoringImageFallbacks?.initialize(document);
-  observeReveals();
-  initializePreviewDialog();
-  initializeAds();
-});
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", () => {
+    window.ColoringImageFallbacks?.initialize(document);
+    observeReveals();
+    initializePreviewDialog();
+    initializeAds();
+  });
+}
 
 function observeReveals() {
   const revealNodes = document.querySelectorAll(".reveal");
@@ -36,14 +38,21 @@ function initializePreviewDialog() {
 
   const previewImage = dialog.querySelector("[data-preview-image]");
   const previewTitle = dialog.querySelector("[data-preview-title]");
-  const openImageLink = dialog.querySelector("[data-open-image]");
+  const printImageLink = dialog.querySelector("[data-print-image]");
   const downloadImageLink = dialog.querySelector("[data-download-image]");
 
   document.addEventListener("click", (event) => {
     const previewTrigger = event.target.closest("[data-preview-trigger]");
     if (previewTrigger) {
       event.preventDefault();
-      openPreview(dialog, previewTrigger, previewImage, previewTitle, openImageLink, downloadImageLink);
+      openPreview(dialog, previewTrigger, previewImage, previewTitle, printImageLink, downloadImageLink);
+      return;
+    }
+
+    const printTrigger = event.target.closest("[data-print-image]");
+    if (printTrigger) {
+      event.preventDefault();
+      openPrintView(printTrigger.getAttribute("href"), printTrigger.dataset.printTitle || previewTitle.textContent);
       return;
     }
 
@@ -63,34 +72,70 @@ function initializePreviewDialog() {
     window.ColoringImageFallbacks?.clearImage(previewImage);
     previewImage.alt = "";
     previewTitle.textContent = "Coloring page preview";
-    openImageLink.setAttribute("href", "#");
+    printImageLink.setAttribute("href", "#");
+    delete printImageLink.dataset.printTitle;
     downloadImageLink.setAttribute("href", "#");
   });
 }
 
-function openPreview(dialog, trigger, previewImage, previewTitle, openImageLink, downloadImageLink) {
+function openPreview(dialog, trigger, previewImage, previewTitle, printImageLink, downloadImageLink) {
   const imageHref = trigger.getAttribute("href");
   const previewHref = trigger.dataset.previewImage || imageHref;
   const imageTitle = trigger.dataset.previewTitle || "Coloring page preview";
+  const printHref = buildPrintPageUrl(imageHref, imageTitle);
 
-  if (!imageHref) {
+  if (!imageHref || !printHref) {
     return;
   }
 
   if (typeof dialog.showModal !== "function") {
-    window.open(imageHref, "_blank", "noopener");
+    openPrintView(printHref, imageTitle);
     return;
   }
 
   previewTitle.textContent = imageTitle;
   previewImage.alt = imageTitle;
   window.ColoringImageFallbacks?.setImageSource(previewImage, previewHref, imageHref);
-  openImageLink.setAttribute("href", imageHref);
+  printImageLink.setAttribute("href", printHref);
+  printImageLink.dataset.printTitle = imageTitle;
   downloadImageLink.setAttribute("href", imageHref);
 
   if (!dialog.open) {
     dialog.showModal();
   }
+}
+
+function openPrintView(printHref, imageTitle) {
+  if (!printHref) {
+    return;
+  }
+
+  const printWindow = window.open(printHref, "_blank", "noopener");
+  if (!printWindow) {
+    window.location.assign(printHref);
+    return;
+  }
+
+  try {
+    printWindow.document.title = imageTitle || printWindow.document.title;
+  } catch (error) {
+    // Ignore cross-window title access issues while the helper page is loading.
+  }
+}
+
+function buildPrintPageUrl(imageHref, imageTitle) {
+  if (!imageHref || typeof imageHref !== "string") {
+    return "";
+  }
+
+  const printUrl = new URL("print-image.html", window.location.href);
+  printUrl.searchParams.set("image", imageHref);
+
+  if (imageTitle) {
+    printUrl.searchParams.set("title", imageTitle);
+  }
+
+  return printUrl.toString();
 }
 
 function initializeAds() {
@@ -110,4 +155,11 @@ function initializeAds() {
       // Ignore duplicate initialization attempts for generated pages.
     }
   });
+}
+
+if (typeof module !== "undefined") {
+  module.exports = {
+    buildPrintPageUrl,
+    openPrintView,
+  };
 }

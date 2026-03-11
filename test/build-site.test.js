@@ -18,6 +18,7 @@ const {
   resolvePreviewAssetPath,
   resolveVectorizedAssetPath,
 } = require("../scripts/build-site");
+const { buildPrintPageUrl } = require("../book-page");
 const { renderBookCard, renderSpotlightCard, selectSpotlightBook } = require("../script");
 
 test("thumbnail path helpers prefer webp previews only for supported raster images", () => {
@@ -51,6 +52,24 @@ test("vector path helpers only rewrite selected raster images", () => {
   assert.equal(resolveVectorizedAssetPath("assets/books/animals-kids/page-01.png", vectorSettings), "");
   assert.equal(resolveVectorizedAssetPath("assets/books/magical-creatures-kids/page-01.pdf", vectorSettings), "");
   assert.equal(resolveVectorizedAssetPath("assets/books/magical-creatures-kids/page-01.svg", vectorSettings), "");
+});
+
+test("print helper URLs target the static print page with image and title params", () => {
+  global.window = {
+    location: {
+      href: "https://example.com/books/test-book.html",
+    },
+  };
+
+  try {
+    assert.equal(
+      buildPrintPageUrl("../assets/books/test-book/page-01.png", "Page 01"),
+      "https://example.com/books/print-image.html?image=..%2Fassets%2Fbooks%2Ftest-book%2Fpage-01.png&title=Page+01"
+    );
+    assert.equal(buildPrintPageUrl("", "Page 01"), "");
+  } finally {
+    delete global.window;
+  }
 });
 
 test("spotlight selection prioritizes visible and featured books before global fallbacks", () => {
@@ -100,11 +119,13 @@ test("local and dist builds emit the expected preview/original image references"
     assert.equal(localFallbackBook.listingImage, "assets/books/sample-book/page-01.png");
     assert.equal(localFallbackBook.listingImagePreview, "assets/books/sample-book/page-01.png");
     assert.match(localBookPage, /data-preview-image="\.\.\/assets\/books\/test-book\/page-01\.png"/);
+    assert.match(localBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
     assert.match(localFallbackBookPage, /src="\.\.\/assets\/books\/sample-book\/page-01\.png"/);
     assert.match(localFallbackBookPage, /alt="Sample Book cover"/);
     assert.doesNotMatch(localBookPage, /data-download-pdf/);
     assert.doesNotMatch(localBookPage, /data-preview-pdf/);
     assert.doesNotMatch(localBookPage, /thumbs\//);
+    await fs.access(path.join(localOutputRoot, "print-image.html"));
 
     await buildSite({
       sourceRoot,
@@ -146,11 +167,13 @@ test("local and dist builds emit the expected preview/original image references"
       distBookPage,
       /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/page-01\.png" data-preview-trigger data-preview-image="\.\.\/assets\/books\/test-book\/thumbs\/page-01\.webp"/
     );
+    assert.match(distBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
     assert.match(
       distBookPage,
       /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/book\.pdf" download>Download full book<\/a>/
     );
 
+    await fs.access(path.join(distOutputRoot, "print-image.html"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "thumbs", "cover.webp"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "thumbs", "page-01.webp"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "sample-book", "thumbs", "page-01.webp"));
@@ -186,7 +209,9 @@ test("svg-local build rewrites only the targeted book to generated svg assets", 
     assert.equal(vectorBook.listingImagePreview, "assets/books/magical-creatures-kids/svg/page-01.svg");
     assert.equal(rasterBook.listingImage, "assets/books/animals-kids/svg/page-01.svg");
     assert.match(vectorBookPage, /href="\.\.\/assets\/books\/magical-creatures-kids\/svg\/page-01\.svg" data-preview-trigger data-preview-image="\.\.\/assets\/books\/magical-creatures-kids\/svg\/page-01\.svg"/);
+    assert.match(vectorBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
     assert.match(vectorBookPage, /download>Download image<\/a>/);
+    await fs.access(path.join(svgOutputRoot, "print-image.html"));
     await fs.access(path.join(svgOutputRoot, "assets", "books", "magical-creatures-kids", "svg", "page-01.svg"));
     await fs.access(path.join(svgOutputRoot, "assets", "books", "animals-kids", "svg", "page-01.svg"));
   } finally {
@@ -210,6 +235,7 @@ test("svg-local build script writes to dist-svg in the project root", async () =
     });
 
     await fs.access(path.join(fixtureRoot, "dist-svg", "index.html"));
+    await fs.access(path.join(fixtureRoot, "dist-svg", "print-image.html"));
     await fs.access(path.join(fixtureRoot, "dist-svg", "books", "magical-creatures-kids.html"));
   } finally {
     await fs.rm(fixtureRoot, { recursive: true, force: true });
@@ -248,7 +274,9 @@ test("dist svg build keeps images local, externalizes pdfs, and generates svg as
       vectorBookPage,
       /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/magical-creatures-kids\/magical_creatures_coloring_book\.pdf" download>Download full book<\/a>/
     );
+    assert.match(vectorBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
     assert.doesNotMatch(vectorBookPage, /raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/magical-creatures-kids\/svg\//);
+    await fs.access(path.join(distOutputRoot, "print-image.html"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "magical-creatures-kids", "svg", "page-01.svg"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "svg", "cover.svg"));
   } finally {
@@ -272,6 +300,7 @@ test("dist svg build script writes deployable svg dist output in the project roo
     });
 
     await fs.access(path.join(fixtureRoot, "dist", "index.html"));
+    await fs.access(path.join(fixtureRoot, "dist", "print-image.html"));
     await fs.access(path.join(fixtureRoot, "dist", "books", "magical-creatures-kids.html"));
     await fs.access(path.join(fixtureRoot, "dist", "assets", "books", "magical-creatures-kids", "svg", "page-01.svg"));
   } finally {
@@ -323,6 +352,7 @@ async function createFixtureProject(projectRoot) {
     "script.js": "console.log('home');\n",
     "book-page.js": "console.log('book');\n",
     "image-fallback.js": "console.log('fallback');\n",
+    "print-image.html": "<!DOCTYPE html><html><head></head><body>print</body></html>\n",
     "favicon.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1 1\"></svg>\n",
   };
 

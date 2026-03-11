@@ -3,7 +3,7 @@ const path = require("path");
 const vm = require("vm");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const STATIC_FILES = ["index.html", "styles.css", "script.js", "book-page.js", "image-fallback.js", "favicon.svg"];
+const STATIC_FILES = ["index.html", "styles.css", "script.js", "book-page.js", "image-fallback.js", "print-image.html", "favicon.svg"];
 
 const FALLBACK_ACCENTS = ["#d86d4c", "#5e7f63", "#3a7d80", "#c38a3f", "#9b5d7b"];
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -1017,7 +1017,7 @@ function renderPreviewDialog() {
           </div>
         </div>
         <div class="page-card__actions image-dialog__actions">
-          <a class="button" href="#" data-open-image target="_blank" rel="noopener">Open original</a>
+          <a class="button" href="#" data-print-image target="_blank" rel="noopener">Print</a>
           <a class="button button--secondary" href="#" data-download-image download>Download image</a>
         </div>
       </div>

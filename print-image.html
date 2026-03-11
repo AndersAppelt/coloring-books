@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Print Coloring Page</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #f3efe6;
+        color: #1f1a16;
+        font-family: "Segoe UI", Arial, sans-serif;
+      }
+
+      main {
+        width: min(100%, 1100px);
+        padding: 24px;
+      }
+
+      figure {
+        margin: 0;
+        display: grid;
+        gap: 12px;
+        justify-items: center;
+      }
+
+      img {
+        display: block;
+        width: auto;
+        max-width: 100%;
+        max-height: calc(100vh - 96px);
+        object-fit: contain;
+        background: #ffffff;
+        box-shadow: 0 20px 60px rgba(31, 26, 22, 0.18);
+      }
+
+      figcaption {
+        font-size: 0.95rem;
+        text-align: center;
+      }
+
+      .status {
+        font-size: 0.95rem;
+        text-align: center;
+      }
+
+      @media print {
+        body {
+          background: #ffffff;
+        }
+
+        main {
+          width: auto;
+          padding: 0;
+        }
+
+        img {
+          max-width: 100%;
+          max-height: 100vh;
+          box-shadow: none;
+        }
+
+        .status {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="status" data-print-status>Preparing image for printing...</p>
+      <figure hidden data-print-figure>
+        <img alt="" data-print-image />
+        <figcaption data-print-title></figcaption>
+      </figure>
+    </main>
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const imageSrc = params.get("image") || "";
+        const imageTitle = params.get("title") || "Coloring page";
+        const status = document.querySelector("[data-print-status]");
+        const figure = document.querySelector("[data-print-figure]");
+        const image = document.querySelector("[data-print-image]");
+        const title = document.querySelector("[data-print-title]");
+
+        document.title = imageTitle ? `Print ${imageTitle}` : "Print Coloring Page";
+        title.textContent = imageTitle;
+        image.alt = imageTitle;
+
+        if (!imageSrc) {
+          status.textContent = "Missing image URL. Close this tab and try again.";
+          return;
+        }
+
+        image.addEventListener(
+          "load",
+          () => {
+            figure.hidden = false;
+            status.hidden = true;
+            window.setTimeout(() => window.print(), 50);
+          },
+          { once: true }
+        );
+
+        image.addEventListener(
+          "error",
+          () => {
+            status.textContent = "The image could not be loaded for printing.";
+          },
+          { once: true }
+        );
+
+        window.addEventListener("afterprint", () => {
+          window.close();
+        });
+
+        image.src = imageSrc;
+      })();
+    </script>
+  </body>
+</html>
