@@ -4,9 +4,20 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
+const { execFile } = require("node:child_process");
+const { promisify } = require("node:util");
 const sharp = require("sharp");
 
-const { buildSite, getThumbnailAssetPath, resolvePreviewAssetPath } = require("../scripts/build-site");
+const execFileAsync = promisify(execFile);
+
+const {
+  buildSite,
+  buildDistSvg,
+  buildSvgLocal,
+  getThumbnailAssetPath,
+  resolvePreviewAssetPath,
+  resolveVectorizedAssetPath,
+} = require("../scripts/build-site");
 const { renderBookCard, renderSpotlightCard, selectSpotlightBook } = require("../script");
 
 test("thumbnail path helpers prefer webp previews only for supported raster images", () => {
@@ -24,6 +35,22 @@ test("thumbnail path helpers prefer webp previews only for supported raster imag
     resolvePreviewAssetPath("assets/books/test-book/vector.svg", { preferThumbnails: true }),
     "assets/books/test-book/vector.svg"
   );
+});
+
+test("vector path helpers only rewrite selected raster images", () => {
+  const vectorSettings = {
+    vectorizeImages: true,
+    vectorizedBookIds: ["magical-creatures-kids"],
+    vectorOutputSubdir: "svg",
+  };
+
+  assert.equal(
+    resolveVectorizedAssetPath("assets/books/magical-creatures-kids/page-01.png", vectorSettings),
+    "assets/books/magical-creatures-kids/svg/page-01.svg"
+  );
+  assert.equal(resolveVectorizedAssetPath("assets/books/animals-kids/page-01.png", vectorSettings), "");
+  assert.equal(resolveVectorizedAssetPath("assets/books/magical-creatures-kids/page-01.pdf", vectorSettings), "");
+  assert.equal(resolveVectorizedAssetPath("assets/books/magical-creatures-kids/page-01.svg", vectorSettings), "");
 });
 
 test("spotlight selection prioritizes visible and featured books before global fallbacks", () => {
@@ -126,6 +153,123 @@ test("local and dist builds emit the expected preview/original image references"
   }
 });
 
+test("svg-local build rewrites only the targeted book to generated svg assets", async () => {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "coloring-books-svg-build-test-"));
+
+  try {
+    const sourceRoot = path.join(tempRoot, "source");
+    const svgOutputRoot = path.join(tempRoot, "dist-svg");
+
+    await createFixtureProject(sourceRoot);
+
+    await buildSvgLocal({
+      sourceRoot,
+      outputRoot: svgOutputRoot,
+      vectorizedBookIds: ["magical-creatures-kids"],
+    });
+
+    const svgLibrary = await readWindowData(path.join(svgOutputRoot, "assets", "books", "library.js"), "BOOK_LIBRARY");
+    const vectorBook = svgLibrary.books.find((book) => book.id === "magical-creatures-kids");
+    const rasterBook = svgLibrary.books.find((book) => book.id === "animals-kids");
+    const vectorBookPage = await fs.readFile(path.join(svgOutputRoot, "books", "magical-creatures-kids.html"), "utf8");
+
+    assert.equal(vectorBook.listingImage, "assets/books/magical-creatures-kids/svg/page-01.svg");
+    assert.equal(vectorBook.listingImagePreview, "assets/books/magical-creatures-kids/svg/page-01.svg");
+    assert.equal(rasterBook.listingImage, "assets/books/animals-kids/page-01.png");
+    assert.match(vectorBookPage, /href="\.\.\/assets\/books\/magical-creatures-kids\/svg\/page-01\.svg" data-preview-trigger data-preview-image="\.\.\/assets\/books\/magical-creatures-kids\/svg\/page-01\.svg"/);
+    assert.match(vectorBookPage, /download>Download image<\/a>/);
+    await fs.access(path.join(svgOutputRoot, "assets", "books", "magical-creatures-kids", "svg", "page-01.svg"));
+    await fs.access(path.join(svgOutputRoot, "assets", "books", "animals-kids", "page-01.png"));
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("svg-local build script writes to dist-svg in the project root", async () => {
+  const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), "coloring-books-svg-script-test-"));
+
+  try {
+    await createFixtureProject(fixtureRoot);
+    await fs.cp(path.join(__dirname, "..", "scripts"), path.join(fixtureRoot, "scripts"), { recursive: true });
+
+    await execFileAsync(process.execPath, [path.join("scripts", "build-svg-local.js")], {
+      cwd: fixtureRoot,
+      env: {
+        ...process.env,
+        NODE_PATH: path.join(__dirname, "..", "node_modules"),
+      },
+    });
+
+    await fs.access(path.join(fixtureRoot, "dist-svg", "index.html"));
+    await fs.access(path.join(fixtureRoot, "dist-svg", "books", "magical-creatures-kids.html"));
+  } finally {
+    await fs.rm(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test("dist svg build keeps images local, externalizes pdfs, and generates svg assets", async () => {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "coloring-books-dist-svg-build-test-"));
+  const externalAssetBaseUrl = "https://raw.githubusercontent.com/example/coloring-books/main/";
+
+  try {
+    const sourceRoot = path.join(tempRoot, "source");
+    const distOutputRoot = path.join(tempRoot, "dist");
+
+    await createFixtureProject(sourceRoot);
+
+    await buildDistSvg({
+      sourceRoot,
+      outputRoot: distOutputRoot,
+      externalAssetBaseUrl,
+    });
+
+    const distLibrary = await readWindowData(path.join(distOutputRoot, "assets", "books", "library.js"), "BOOK_LIBRARY");
+    const vectorBook = distLibrary.books.find((book) => book.id === "magical-creatures-kids");
+    const rasterBook = distLibrary.books.find((book) => book.id === "test-book");
+    const vectorBookPage = await fs.readFile(path.join(distOutputRoot, "books", "magical-creatures-kids.html"), "utf8");
+
+    assert.equal(vectorBook.listingImage, "assets/books/magical-creatures-kids/svg/page-01.svg");
+    assert.equal(vectorBook.listingImagePreview, "assets/books/magical-creatures-kids/svg/page-01.svg");
+    assert.equal(vectorBook.pdf, `${externalAssetBaseUrl}assets/books/magical-creatures-kids/magical_creatures_coloring_book.pdf`);
+    assert.equal(rasterBook.listingImage, "assets/books/test-book/svg/cover.svg");
+    assert.equal(rasterBook.listingImagePreview, "assets/books/test-book/svg/cover.svg");
+    assert.equal(rasterBook.pdf, `${externalAssetBaseUrl}assets/books/test-book/book.pdf`);
+    assert.match(vectorBookPage, /src="\.\.\/assets\/books\/magical-creatures-kids\/svg\/page-01\.svg"/);
+    assert.match(
+      vectorBookPage,
+      /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/magical-creatures-kids\/magical_creatures_coloring_book\.pdf" download>Download full book<\/a>/
+    );
+    assert.doesNotMatch(vectorBookPage, /raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/magical-creatures-kids\/svg\//);
+    await fs.access(path.join(distOutputRoot, "assets", "books", "magical-creatures-kids", "svg", "page-01.svg"));
+    await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "svg", "cover.svg"));
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("dist svg build script writes deployable svg dist output in the project root", async () => {
+  const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), "coloring-books-dist-svg-script-test-"));
+
+  try {
+    await createFixtureProject(fixtureRoot);
+    await fs.cp(path.join(__dirname, "..", "scripts"), path.join(fixtureRoot, "scripts"), { recursive: true });
+
+    await execFileAsync(process.execPath, [path.join("scripts", "build-dist-svg.js")], {
+      cwd: fixtureRoot,
+      env: {
+        ...process.env,
+        NODE_PATH: path.join(__dirname, "..", "node_modules"),
+      },
+    });
+
+    await fs.access(path.join(fixtureRoot, "dist", "index.html"));
+    await fs.access(path.join(fixtureRoot, "dist", "books", "magical-creatures-kids.html"));
+    await fs.access(path.join(fixtureRoot, "dist", "assets", "books", "magical-creatures-kids", "svg", "page-01.svg"));
+  } finally {
+    await fs.rm(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test("homepage markup and renderers target the hero spotlight with listing images", async () => {
   const indexSource = await fs.readFile(path.join(__dirname, "..", "index.html"), "utf8");
   const sampleBook = {
@@ -196,6 +340,19 @@ async function createFixtureProject(projectRoot) {
     title: "Sample Book",
     description: "A fallback-first fixture book.",
     accent: "#654321"
+  },
+  {
+    name: "animals-kids",
+    title: "Animals for Kids",
+    description: "Fixture raster book that should stay raster in svg-local mode.",
+    accent: "#5f8156"
+  },
+  {
+    name: "magical-creatures-kids",
+    title: "Magical Creatures for Kids",
+    description: "Fixture vector target book.",
+    accent: "#3f7f83",
+    pdf: "magical_creatures_coloring_book.pdf"
   }
 ];
 `,
@@ -210,6 +367,18 @@ async function createFixtureProject(projectRoot) {
   await fs.mkdir(path.join(projectRoot, "assets", "books", "sample-book"), { recursive: true });
   await writeFixturePng(path.join(projectRoot, "assets", "books", "sample-book", "page-01.png"));
   await writeFixturePng(path.join(projectRoot, "assets", "books", "sample-book", "page-02.png"));
+
+  await fs.mkdir(path.join(projectRoot, "assets", "books", "animals-kids"), { recursive: true });
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "animals-kids", "page-01.png"));
+
+  await fs.mkdir(path.join(projectRoot, "assets", "books", "magical-creatures-kids"), { recursive: true });
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "magical-creatures-kids", "page-01.png"));
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "magical-creatures-kids", "page-02.png"));
+  await fs.writeFile(
+    path.join(projectRoot, "assets", "books", "magical-creatures-kids", "magical_creatures_coloring_book.pdf"),
+    "%PDF-1.4 fixture\n",
+    "utf8"
+  );
 }
 
 async function readWindowData(filePath, variableName) {

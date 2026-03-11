@@ -88,6 +88,14 @@ npm run build:dist
 
 That writes a fresh `dist/` folder, generates preview thumbnails under `dist/assets/books/<theme>/thumbs/`, and rewrites full-size image and PDF links to GitHub Raw URLs so SWA does not need to host the original assets.
 
+To produce the deployable SVG variant:
+
+```bash
+npm run build:dist-svg
+```
+
+That writes a fresh `dist/` folder, generates SVG image assets under `dist/assets/books/<theme>/svg/`, keeps image links local to the built site, and rewrites only PDF links to GitHub Raw URLs.
+
 ## What gets generated
 
 - `assets/books/library.js` is what the homepage uses.
@@ -117,5 +125,5 @@ The GitHub Actions deploy job now:
 
 1. runs `npm ci`
 2. runs `npm test`
-3. runs `npm run build:dist`
+3. runs `npm run build:dist-svg`
 4. uploads the prebuilt `dist/` folder to Azure Static Web Apps

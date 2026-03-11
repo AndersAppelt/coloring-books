@@ -4,9 +4,12 @@
   "scripts": {
     "build": "node scripts/build-site.js",
     "build:dist": "node scripts/build-dist.js",
+    "build:dist-svg": "node scripts/build-dist-svg.js",
+    "build:svg-local": "node scripts/build-svg-local.js",
     "test": "node --test"
   },
   "devDependencies": {
+    "potrace": "^2.1.8",
     "sharp": "^0.34.5"
   }
 }
