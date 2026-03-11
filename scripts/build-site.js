@@ -781,8 +781,8 @@ function renderBookPage(book) {
   const pageTitle = `${book.title} | Coloring Library`;
   const pageCount = book.items.length;
   const pageDescription = book.description || `Browse ${pageCount} printable coloring pages from ${book.title}.`;
-  const heroPreviewImage = book.coverPreview ? toBookPagePath(book.coverPreview) : "";
-  const heroFullImage = book.cover ? toBookPagePath(book.cover) : "";
+  const heroPreviewImage = toBookPagePath(book.coverPreview || book.listingImagePreview);
+  const heroFullImage = toBookPagePath(book.cover || book.listingImage);
   const galleryMarkup = [];
   const structuredData = serializeStructuredData(buildBookStructuredData(book));
 
@@ -956,9 +956,7 @@ function renderGalleryCard(item) {
             fullImagePath
               ? `<a class="page-card__link" href="${escapeAttribute(fullImagePath)}" data-preview-trigger data-preview-image="${escapeAttribute(
                   previewImagePath || fullImagePath
-                )}" data-preview-title="${escapeAttribute(item.title)}"${
-                  pdfPath ? ` data-preview-pdf="${escapeAttribute(pdfPath)}"` : ""
-                }>Preview image</a>`
+                )}" data-preview-title="${escapeAttribute(item.title)}">Preview image</a>`
               : ""
           }
           ${fullImagePath ? `<a class="page-card__link" href="${escapeAttribute(fullImagePath)}" download>Download image</a>` : ""}
@@ -1021,7 +1019,6 @@ function renderPreviewDialog() {
         <div class="page-card__actions image-dialog__actions">
           <a class="button" href="#" data-open-image target="_blank" rel="noopener">Open original</a>
           <a class="button button--secondary" href="#" data-download-image download>Download image</a>
-          <a class="theme-card__action" href="#" data-download-pdf download hidden>Download PDF</a>
         </div>
       </div>
     </dialog>

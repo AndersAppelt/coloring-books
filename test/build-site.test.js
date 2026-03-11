@@ -89,6 +89,7 @@ test("local and dist builds emit the expected preview/original image references"
     const localBook = localLibrary.books.find((book) => book.id === "test-book");
     const localFallbackBook = localLibrary.books.find((book) => book.id === "sample-book");
     const localBookPage = await fs.readFile(path.join(localOutputRoot, "books", "test-book.html"), "utf8");
+    const localFallbackBookPage = await fs.readFile(path.join(localOutputRoot, "books", "sample-book.html"), "utf8");
 
     assert.equal(localBook.cover, "assets/books/test-book/cover.png");
     assert.equal(localBook.coverPreview, "assets/books/test-book/cover.png");
@@ -99,6 +100,10 @@ test("local and dist builds emit the expected preview/original image references"
     assert.equal(localFallbackBook.listingImage, "assets/books/sample-book/page-01.png");
     assert.equal(localFallbackBook.listingImagePreview, "assets/books/sample-book/page-01.png");
     assert.match(localBookPage, /data-preview-image="\.\.\/assets\/books\/test-book\/page-01\.png"/);
+    assert.match(localFallbackBookPage, /src="\.\.\/assets\/books\/sample-book\/page-01\.png"/);
+    assert.match(localFallbackBookPage, /alt="Sample Book cover"/);
+    assert.doesNotMatch(localBookPage, /data-download-pdf/);
+    assert.doesNotMatch(localBookPage, /data-preview-pdf/);
     assert.doesNotMatch(localBookPage, /thumbs\//);
 
     await buildSite({
@@ -119,6 +124,7 @@ test("local and dist builds emit the expected preview/original image references"
     const distBook = distLibrary.books.find((book) => book.id === "test-book");
     const distFallbackBook = distLibrary.books.find((book) => book.id === "sample-book");
     const distBookPage = await fs.readFile(path.join(distOutputRoot, "books", "test-book.html"), "utf8");
+    const distFallbackBookPage = await fs.readFile(path.join(distOutputRoot, "books", "sample-book.html"), "utf8");
 
     assert.equal(distBook.cover, `${externalAssetBaseUrl}assets/books/test-book/cover.png`);
     assert.equal(distBook.coverPreview, "assets/books/test-book/thumbs/cover.webp");
@@ -128,6 +134,10 @@ test("local and dist builds emit the expected preview/original image references"
     assert.equal(distFallbackBook.listingImage, `${externalAssetBaseUrl}assets/books/sample-book/page-01.png`);
     assert.equal(distFallbackBook.listingImagePreview, "assets/books/sample-book/thumbs/page-01.webp");
     assert.match(distBookPage, /src="\.\.\/assets\/books\/test-book\/thumbs\/page-01\.webp"/);
+    assert.match(distFallbackBookPage, /src="\.\.\/assets\/books\/sample-book\/thumbs\/page-01\.webp"/);
+    assert.match(distFallbackBookPage, /alt="Sample Book cover"/);
+    assert.doesNotMatch(distBookPage, /data-download-pdf/);
+    assert.doesNotMatch(distBookPage, /data-preview-pdf/);
     assert.match(
       distBookPage,
       /data-full-src="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/page-01\.png"/

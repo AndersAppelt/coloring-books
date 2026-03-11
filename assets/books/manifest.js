@@ -1,5 +1,5 @@
 window.BOOK_ASSET_MANIFEST = {
-  "generatedAt": "2026-03-10T16:21:39.393Z",
+  "generatedAt": "2026-03-11T10:46:17.331Z",
   "themes": [
     {
       "cover": "",

@@ -38,13 +38,12 @@ function initializePreviewDialog() {
   const previewTitle = dialog.querySelector("[data-preview-title]");
   const openImageLink = dialog.querySelector("[data-open-image]");
   const downloadImageLink = dialog.querySelector("[data-download-image]");
-  const downloadPdfLink = dialog.querySelector("[data-download-pdf]");
 
   document.addEventListener("click", (event) => {
     const previewTrigger = event.target.closest("[data-preview-trigger]");
     if (previewTrigger) {
       event.preventDefault();
-      openPreview(dialog, previewTrigger, previewImage, previewTitle, openImageLink, downloadImageLink, downloadPdfLink);
+      openPreview(dialog, previewTrigger, previewImage, previewTitle, openImageLink, downloadImageLink);
       return;
     }
 
@@ -66,16 +65,13 @@ function initializePreviewDialog() {
     previewTitle.textContent = "Coloring page preview";
     openImageLink.setAttribute("href", "#");
     downloadImageLink.setAttribute("href", "#");
-    downloadPdfLink.setAttribute("href", "#");
-    downloadPdfLink.hidden = true;
   });
 }
 
-function openPreview(dialog, trigger, previewImage, previewTitle, openImageLink, downloadImageLink, downloadPdfLink) {
+function openPreview(dialog, trigger, previewImage, previewTitle, openImageLink, downloadImageLink) {
   const imageHref = trigger.getAttribute("href");
   const previewHref = trigger.dataset.previewImage || imageHref;
   const imageTitle = trigger.dataset.previewTitle || "Coloring page preview";
-  const pdfHref = trigger.dataset.previewPdf || "";
 
   if (!imageHref) {
     return;
@@ -91,14 +87,6 @@ function openPreview(dialog, trigger, previewImage, previewTitle, openImageLink,
   window.ColoringImageFallbacks?.setImageSource(previewImage, previewHref, imageHref);
   openImageLink.setAttribute("href", imageHref);
   downloadImageLink.setAttribute("href", imageHref);
-
-  if (pdfHref) {
-    downloadPdfLink.setAttribute("href", pdfHref);
-    downloadPdfLink.hidden = false;
-  } else {
-    downloadPdfLink.setAttribute("href", "#");
-    downloadPdfLink.hidden = true;
-  }
 
   if (!dialog.open) {
     dialog.showModal();
