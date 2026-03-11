@@ -49,13 +49,6 @@ function initializePreviewDialog() {
       return;
     }
 
-    const printTrigger = event.target.closest("[data-print-image]");
-    if (printTrigger) {
-      event.preventDefault();
-      openPrintView(printTrigger.getAttribute("href"), printTrigger.dataset.printTitle || previewTitle.textContent);
-      return;
-    }
-
     const closeTrigger = event.target.closest("[data-preview-close]");
     if (closeTrigger) {
       dialog.close();
@@ -89,7 +82,7 @@ function openPreview(dialog, trigger, previewImage, previewTitle, printImageLink
   }
 
   if (typeof dialog.showModal !== "function") {
-    openPrintView(printHref, imageTitle);
+    window.location.assign(printHref);
     return;
   }
 
@@ -105,30 +98,12 @@ function openPreview(dialog, trigger, previewImage, previewTitle, printImageLink
   }
 }
 
-function openPrintView(printHref, imageTitle) {
-  if (!printHref) {
-    return;
-  }
-
-  const printWindow = window.open(printHref, "_blank", "noopener");
-  if (!printWindow) {
-    window.location.assign(printHref);
-    return;
-  }
-
-  try {
-    printWindow.document.title = imageTitle || printWindow.document.title;
-  } catch (error) {
-    // Ignore cross-window title access issues while the helper page is loading.
-  }
-}
-
 function buildPrintPageUrl(imageHref, imageTitle) {
   if (!imageHref || typeof imageHref !== "string") {
     return "";
   }
 
-  const printUrl = new URL("print-image.html", window.location.href);
+  const printUrl = new URL("/print-image.html", window.location.href);
   printUrl.searchParams.set("image", imageHref);
 
   if (imageTitle) {
@@ -160,6 +135,5 @@ function initializeAds() {
 if (typeof module !== "undefined") {
   module.exports = {
     buildPrintPageUrl,
-    openPrintView,
   };
 }

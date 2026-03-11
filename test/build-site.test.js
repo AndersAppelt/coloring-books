@@ -64,7 +64,7 @@ test("print helper URLs target the static print page with image and title params
   try {
     assert.equal(
       buildPrintPageUrl("../assets/books/test-book/page-01.png", "Page 01"),
-      "https://example.com/books/print-image.html?image=..%2Fassets%2Fbooks%2Ftest-book%2Fpage-01.png&title=Page+01"
+      "https://example.com/print-image.html?image=..%2Fassets%2Fbooks%2Ftest-book%2Fpage-01.png&title=Page+01"
     );
     assert.equal(buildPrintPageUrl("", "Page 01"), "");
   } finally {

@@ -1,5 +1,5 @@
 window.BOOK_LIBRARY = {
-  "generatedAt": "2026-03-11T12:15:06.287Z",
+  "generatedAt": "2026-03-11T12:30:33.598Z",
   "books": [
     {
       "accent": "#5f8156",
