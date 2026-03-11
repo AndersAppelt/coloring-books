@@ -8,6 +8,7 @@ const STATIC_FILES = ["index.html", "styles.css", "script.js", "book-page.js", "
 const FALLBACK_ACCENTS = ["#d86d4c", "#5e7f63", "#3a7d80", "#c38a3f", "#9b5d7b"];
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
 const THUMBNAIL_SOURCE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif"]);
+const VECTORIZABLE_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"]);
 const PDF_EXTENSIONS = new Set([".pdf"]);
 const COVER_NAMES = new Set(["cover", "front-cover", "front_cover", "thumbnail", "thumb"]);
 const BOOK_PDF_HINTS = ["book", "collection", "pages", "printable", "full"];
@@ -15,6 +16,7 @@ const PLACEHOLDER_HINTS = ["placeholder", "sample", "thumbs.db", ".ds_store"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const INLINE_AD_INTERVAL = 6;
 const DEFAULT_DIST_EXTERNAL_ASSET_BASE_URL = "https://raw.githubusercontent.com/AndersAppelt/coloring-books/main/";
+const DEFAULT_VECTOR_OUTPUT_SUBDIR = "svg";
 
 if (require.main === module) {
   buildSite().catch(handleFatalError);
@@ -23,10 +25,13 @@ if (require.main === module) {
 module.exports = {
   buildSite,
   buildDist,
+  buildDistSvg,
+  buildSvgLocal,
   collectThumbnailJobs,
   getThumbnailAssetPath,
   resolveBuildOptions,
   resolvePreviewAssetPath,
+  resolveVectorizedAssetPath,
 };
 
 async function buildSite(options = {}) {
@@ -50,6 +55,11 @@ async function buildSite(options = {}) {
   const thumbnailJobs = settings.generateThumbnails ? collectThumbnailJobs(sourceLibrary, settings) : [];
   if (thumbnailJobs.length) {
     await generateThumbnails(thumbnailJobs, settings);
+  }
+
+  const vectorizationJobs = settings.vectorizeImages ? collectVectorizationJobs(sourceLibrary, settings) : [];
+  if (vectorizationJobs.length) {
+    await generateVectorizedImages(vectorizationJobs);
   }
 
   if (settings.writeManifest) {
@@ -77,6 +87,7 @@ async function buildSite(options = {}) {
     books: library,
     copiedAssetCount: settings.copyReferencedAssets ? collectReferencedAssetPaths(library).size : 0,
     generatedThumbnailCount: thumbnailJobs.length,
+    generatedVectorizedImageCount: vectorizationJobs.length,
     outputRoot: settings.outputRoot,
   };
 }
@@ -92,6 +103,37 @@ function buildDist(options = {}) {
     externalizePdfs: true,
     generateThumbnails: true,
     preferThumbnails: true,
+    writeManifest: false,
+    ...options,
+  });
+}
+
+function buildDistSvg(options = {}) {
+  return buildSite({
+    outputRoot: path.join(PROJECT_ROOT, "dist"),
+    cleanOutput: true,
+    copyStaticFiles: true,
+    copyReferencedAssets: true,
+    externalAssetBaseUrl: DEFAULT_DIST_EXTERNAL_ASSET_BASE_URL,
+    externalizeImages: false,
+    externalizePdfs: true,
+    generateThumbnails: false,
+    preferThumbnails: false,
+    vectorizeImages: true,
+    writeManifest: false,
+    ...options,
+  });
+}
+
+function buildSvgLocal(options = {}) {
+  return buildSite({
+    outputRoot: path.join(PROJECT_ROOT, "dist-svg"),
+    cleanOutput: true,
+    copyStaticFiles: true,
+    copyReferencedAssets: true,
+    generateThumbnails: false,
+    preferThumbnails: false,
+    vectorizeImages: true,
     writeManifest: false,
     ...options,
   });
@@ -123,6 +165,9 @@ function resolveBuildOptions(options) {
   const externalAssetBaseUrl = normalizeExternalAssetBaseUrl(options.externalAssetBaseUrl);
   const externalizeImages = Boolean(options.externalizeImages);
   const externalizePdfs = Boolean(options.externalizePdfs);
+  const vectorizeImages = Boolean(options.vectorizeImages);
+  const vectorizedBookIds = normalizeBookIdList(options.vectorizedBookIds);
+  const vectorOutputSubdir = normalizeVectorOutputSubdir(options.vectorOutputSubdir);
 
   if ((externalizeImages || externalizePdfs) && !externalAssetBaseUrl) {
     throw new Error("External asset rewriting requires `externalAssetBaseUrl` to be configured.");
@@ -146,6 +191,9 @@ function resolveBuildOptions(options) {
     sourceBookAssetsRoot,
     sourceRoot,
     thumbnailMaxEdge: Number.isFinite(options.thumbnailMaxEdge) ? options.thumbnailMaxEdge : 1024,
+    vectorizeImages,
+    vectorizedBookIds,
+    vectorOutputSubdir,
     writeManifest: options.writeManifest ?? writesIntoSourceRoot,
   };
 }
@@ -198,6 +246,10 @@ function copyReferencedAssets(library, settings) {
     const sourcePath = path.join(settings.sourceRoot, normalizedPath);
     const destinationPath = path.join(settings.outputRoot, normalizedPath);
 
+    if (!fs.existsSync(sourcePath)) {
+      return;
+    }
+
     ensureDirectory(path.dirname(destinationPath));
     fs.copyFileSync(sourcePath, destinationPath);
   });
@@ -233,6 +285,21 @@ function collectThumbnailJobs(library, settings) {
   return [...jobsByDestination.values()];
 }
 
+function collectVectorizationJobs(library, settings) {
+  const jobsByDestination = new Map();
+
+  library.forEach((book) => {
+    addVectorizationJob(jobsByDestination, book.cover, settings);
+
+    book.items.forEach((item) => {
+      addVectorizationJob(jobsByDestination, item.image, settings);
+    });
+  });
+
+  return [...jobsByDestination.values()];
+}
+
+
 function addThumbnailJob(jobsByDestination, assetPathValue, settings) {
   const sourceAssetPath = normalizeProjectAssetPath(assetPathValue);
   const previewAssetPath = normalizeProjectAssetPath(resolvePreviewAssetPath(assetPathValue, settings));
@@ -249,6 +316,24 @@ function addThumbnailJob(jobsByDestination, assetPathValue, settings) {
     previewAssetPath,
     sourceAssetPath,
     sourcePath,
+  });
+}
+
+function addVectorizationJob(jobsByDestination, assetPathValue, settings) {
+  const sourceAssetPath = normalizeProjectAssetPath(assetPathValue);
+  const vectorizedAssetPath = normalizeProjectAssetPath(resolveVectorizedAssetPath(assetPathValue, settings));
+
+  if (!sourceAssetPath || !vectorizedAssetPath || sourceAssetPath === vectorizedAssetPath) {
+    return;
+  }
+
+  const sourcePath = path.join(settings.sourceRoot, sourceAssetPath);
+  const destinationPath = path.join(settings.outputRoot, vectorizedAssetPath);
+
+  jobsByDestination.set(destinationPath, {
+    destinationPath,
+    sourcePath,
+    vectorizedAssetPath,
   });
 }
 
@@ -293,6 +378,11 @@ function resolvePreviewAssetPath(value, settings = {}) {
     return "";
   }
 
+  const vectorizedAssetPath = resolveVectorizedAssetPath(value, settings);
+  if (vectorizedAssetPath) {
+    return vectorizedAssetPath;
+  }
+
   if (!settings.preferThumbnails) {
     return value;
   }
@@ -323,6 +413,46 @@ async function generateThumbnails(thumbnailJobs, settings) {
       .webp({ quality: 82 })
       .toFile(job.destinationPath);
   }
+}
+
+async function generateVectorizedImages(vectorizationJobs) {
+  let potrace;
+
+  try {
+    potrace = require("potrace");
+  } catch (error) {
+    throw new Error("Generating SVG images requires the `potrace` package to be installed.", { cause: error });
+  }
+
+  for (const job of vectorizationJobs) {
+    ensureDirectory(path.dirname(job.destinationPath));
+    const svg = await traceImageToSvg(job.sourcePath, potrace);
+    fs.writeFileSync(job.destinationPath, svg, "utf8");
+  }
+}
+
+function traceImageToSvg(sourcePath, potrace) {
+  return new Promise((resolve, reject) => {
+    potrace.trace(
+      sourcePath,
+      {
+        background: "#ffffff",
+        blackOnWhite: true,
+        color: "#000000",
+        optTolerance: 0.2,
+        threshold: potrace.Potrace?.THRESHOLD_AUTO ?? -1,
+        turdSize: 2,
+      },
+      (error, svg) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(svg);
+      }
+    );
+  });
 }
 
 function loadManualCatalog(catalogPath) {
@@ -471,16 +601,15 @@ function normalizeTheme(entry, index, settings) {
     ? entry.items.map((item, itemIndex) => normalizeItem(item, folder, itemIndex, settings)).filter(Boolean)
     : [];
   const explicitCover = resolveAssetPath(entry.cover, folder);
+  const explicitCoverPreview = resolvePreviewAssetPath(explicitCover, settings);
   const listingImage = explicitCover || items[0]?.image || "";
-  const listingImagePreview = explicitCover
-    ? resolvePreviewAssetPath(explicitCover, settings)
-    : items[0]?.previewImage || listingImage;
+  const listingImagePreview = explicitCover ? explicitCoverPreview : items[0]?.previewImage || listingImage;
   const title = entry.title || prettifySlug(slug);
 
   return {
     accent: entry.accent || FALLBACK_ACCENTS[index % FALLBACK_ACCENTS.length],
     cover: explicitCover || "",
-    coverPreview: resolvePreviewAssetPath(explicitCover, settings),
+    coverPreview: explicitCoverPreview,
     description: entry.description || "",
     featured: Boolean(entry.featured),
     hasExplicitCover: Boolean(explicitCover || entry.hasExplicitCover),
@@ -538,6 +667,11 @@ function applyOutputAssetStrategy(library, settings) {
 }
 
 function resolveOutputImageAssetPath(value, settings) {
+  const vectorizedAssetPath = resolveVectorizedAssetPath(value, settings);
+  if (vectorizedAssetPath) {
+    return resolveExternalAssetPath(vectorizedAssetPath, settings.externalizeImages, settings);
+  }
+
   return resolveExternalAssetPath(value, settings.externalizeImages, settings);
 }
 
@@ -548,6 +682,11 @@ function resolveOutputPdfAssetPath(value, settings) {
 function resolveOutputPreviewAssetPath(value, settings) {
   if (!value || typeof value !== "string") {
     return "";
+  }
+
+  const vectorizedAssetPath = resolveVectorizedAssetPath(value, settings);
+  if (vectorizedAssetPath) {
+    return resolveOutputImageAssetPath(vectorizedAssetPath, settings);
   }
 
   if (isThumbnailAssetPath(value)) {
@@ -573,6 +712,49 @@ function resolveExternalAssetPath(value, shouldExternalize, settings) {
 function isThumbnailAssetPath(value) {
   const normalizedPath = normalizeProjectAssetPath(value);
   return Boolean(normalizedPath && normalizedPath.includes("/thumbs/"));
+}
+
+function resolveVectorizedAssetPath(value, settings = {}) {
+  const normalizedPath = normalizeProjectAssetPath(value);
+  if (!normalizedPath || !settings.vectorizeImages) {
+    return "";
+  }
+
+  if (!shouldVectorizeAsset(normalizedPath, settings)) {
+    return "";
+  }
+
+  const extension = path.posix.extname(normalizedPath).toLowerCase();
+  const directory = path.posix.dirname(normalizedPath);
+  const fileName = path.posix.basename(normalizedPath, extension);
+  return path.posix.join(directory, settings.vectorOutputSubdir || DEFAULT_VECTOR_OUTPUT_SUBDIR, `${fileName}.svg`);
+}
+
+function shouldVectorizeAsset(normalizedAssetPath, settings = {}) {
+  if (!normalizedAssetPath || !settings.vectorizeImages) {
+    return false;
+  }
+
+  const extension = path.posix.extname(normalizedAssetPath).toLowerCase();
+  if (!VECTORIZABLE_IMAGE_EXTENSIONS.has(extension)) {
+    return false;
+  }
+
+  const bookId = getBookIdFromAssetPath(normalizedAssetPath);
+  if (!bookId) {
+    return false;
+  }
+
+  if (!settings.vectorizedBookIds?.length) {
+    return true;
+  }
+
+  return settings.vectorizedBookIds.includes(bookId);
+}
+
+function getBookIdFromAssetPath(normalizedAssetPath) {
+  const match = /^assets\/books\/([^/]+)\//.exec(normalizedAssetPath);
+  return match?.[1] || "";
 }
 
 function summarizeBookForLibrary(book) {
@@ -1010,6 +1192,22 @@ function mergeTags(primaryTags, fallbackTags) {
 
 function normalizeTags(tags) {
   return Array.isArray(tags) ? tags.filter((tag) => typeof tag === "string") : [];
+}
+
+function normalizeBookIdList(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((entry) => slugify(entry)).filter(Boolean);
+}
+
+function normalizeVectorOutputSubdir(value) {
+  if (!value || typeof value !== "string") {
+    return DEFAULT_VECTOR_OUTPUT_SUBDIR;
+  }
+
+  return value.replace(/^\/+|\/+$/g, "") || DEFAULT_VECTOR_OUTPUT_SUBDIR;
 }
 
 function pathsEqual(left, right) {
