@@ -165,7 +165,6 @@ test("svg-local build rewrites only the targeted book to generated svg assets", 
     await buildSvgLocal({
       sourceRoot,
       outputRoot: svgOutputRoot,
-      vectorizedBookIds: ["magical-creatures-kids"],
     });
 
     const svgLibrary = await readWindowData(path.join(svgOutputRoot, "assets", "books", "library.js"), "BOOK_LIBRARY");
@@ -175,11 +174,11 @@ test("svg-local build rewrites only the targeted book to generated svg assets", 
 
     assert.equal(vectorBook.listingImage, "assets/books/magical-creatures-kids/svg/page-01.svg");
     assert.equal(vectorBook.listingImagePreview, "assets/books/magical-creatures-kids/svg/page-01.svg");
-    assert.equal(rasterBook.listingImage, "assets/books/animals-kids/page-01.png");
+    assert.equal(rasterBook.listingImage, "assets/books/animals-kids/svg/page-01.svg");
     assert.match(vectorBookPage, /href="\.\.\/assets\/books\/magical-creatures-kids\/svg\/page-01\.svg" data-preview-trigger data-preview-image="\.\.\/assets\/books\/magical-creatures-kids\/svg\/page-01\.svg"/);
     assert.match(vectorBookPage, /download>Download image<\/a>/);
     await fs.access(path.join(svgOutputRoot, "assets", "books", "magical-creatures-kids", "svg", "page-01.svg"));
-    await fs.access(path.join(svgOutputRoot, "assets", "books", "animals-kids", "page-01.png"));
+    await fs.access(path.join(svgOutputRoot, "assets", "books", "animals-kids", "svg", "page-01.svg"));
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }

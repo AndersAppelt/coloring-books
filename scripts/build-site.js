@@ -16,7 +16,6 @@ const PLACEHOLDER_HINTS = ["placeholder", "sample", "thumbs.db", ".ds_store"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const INLINE_AD_INTERVAL = 6;
 const DEFAULT_DIST_EXTERNAL_ASSET_BASE_URL = "https://raw.githubusercontent.com/AndersAppelt/coloring-books/main/";
-const DEFAULT_SVG_LOCAL_BOOK_IDS = ["magical-creatures-kids"];
 const DEFAULT_VECTOR_OUTPUT_SUBDIR = "svg";
 
 if (require.main === module) {
@@ -135,7 +134,6 @@ function buildSvgLocal(options = {}) {
     generateThumbnails: false,
     preferThumbnails: false,
     vectorizeImages: true,
-    vectorizedBookIds: DEFAULT_SVG_LOCAL_BOOK_IDS,
     writeManifest: false,
     ...options,
   });
