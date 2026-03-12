@@ -1,5 +1,5 @@
 window.BOOK_LIBRARY = {
-  "generatedAt": "2026-03-12T08:45:13.238Z",
+  "generatedAt": "2026-03-12T14:39:14.803Z",
   "books": [
     {
       "accent": "#5f8156",
@@ -154,6 +154,28 @@ window.BOOK_LIBRARY = {
         "relaxing"
       ],
       "title": "Nature Mandalas"
+    },
+    {
+      "accent": "#4f77b6",
+      "cover": "",
+      "coverPreview": "",
+      "description": "Printable back-to-school coloring pages filled with classroom scenes, school supplies, and first-day fun.",
+      "featured": false,
+      "hasExplicitCover": false,
+      "id": "back-to-school",
+      "listingImage": "assets/books/back-to-school/0eef6093-a149-4edc-997a-5dd2287e54db.png",
+      "listingImagePreview": "assets/books/back-to-school/0eef6093-a149-4edc-997a-5dd2287e54db.png",
+      "name": "back-to-school",
+      "pageCount": 50,
+      "pageUrl": "books/back-to-school.html",
+      "pdf": "assets/books/back-to-school/back_to_school_coloring_book.pdf",
+      "tags": [
+        "school",
+        "kids",
+        "classroom",
+        "printable"
+      ],
+      "title": "Back to School"
     }
   ]
 };

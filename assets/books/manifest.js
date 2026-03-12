@@ -1,5 +1,5 @@
 window.BOOK_ASSET_MANIFEST = {
-  "generatedAt": "2026-03-12T08:45:13.238Z",
+  "generatedAt": "2026-03-12T14:39:14.803Z",
   "themes": [
     {
       "cover": "",
@@ -1019,6 +1019,264 @@ window.BOOK_ASSET_MANIFEST = {
       ],
       "name": "animals-sports-kids",
       "pdf": "assets/books/animals-sports-kids/sports_coloring_book.pdf"
+    },
+    {
+      "cover": "",
+      "hasExplicitCover": false,
+      "items": [
+        {
+          "image": "assets/books/back-to-school/0eef6093-a149-4edc-997a-5dd2287e54db.png",
+          "pdf": "",
+          "title": "Page 01"
+        },
+        {
+          "image": "assets/books/back-to-school/2a08a64a-0907-424f-a2c9-bef15b375f34.png",
+          "pdf": "",
+          "title": "Page 02"
+        },
+        {
+          "image": "assets/books/back-to-school/2b929eb9-5daf-4024-8ac3-f19bc95a1d32.png",
+          "pdf": "",
+          "title": "Page 03"
+        },
+        {
+          "image": "assets/books/back-to-school/2d4e9ee8-b83f-4796-af19-7af1671bce58.png",
+          "pdf": "",
+          "title": "Page 04"
+        },
+        {
+          "image": "assets/books/back-to-school/2f2a0d96-86a4-43ed-97c6-8b4c75ad4383.png",
+          "pdf": "",
+          "title": "Page 05"
+        },
+        {
+          "image": "assets/books/back-to-school/3b10f5ae-a5bd-47c5-a5b0-4a6f82f72826.png",
+          "pdf": "",
+          "title": "Page 06"
+        },
+        {
+          "image": "assets/books/back-to-school/03b6023b-8e40-4e78-99ce-723bf9a64d73.png",
+          "pdf": "",
+          "title": "Page 07"
+        },
+        {
+          "image": "assets/books/back-to-school/3d082b41-0799-497c-9311-b0eeaadd502b.png",
+          "pdf": "",
+          "title": "Page 08"
+        },
+        {
+          "image": "assets/books/back-to-school/3fbe808a-7ce8-4bec-9637-2ea204cf21e8.png",
+          "pdf": "",
+          "title": "Page 09"
+        },
+        {
+          "image": "assets/books/back-to-school/4b685c70-3be3-405c-9e6e-dc09c445ac44.png",
+          "pdf": "",
+          "title": "Page 10"
+        },
+        {
+          "image": "assets/books/back-to-school/7a10a557-a6ab-412a-af56-1f100a7a6730.png",
+          "pdf": "",
+          "title": "Page 11"
+        },
+        {
+          "image": "assets/books/back-to-school/8e247a1c-717d-4bbc-9401-f4c44fe02c37.png",
+          "pdf": "",
+          "title": "Page 12"
+        },
+        {
+          "image": "assets/books/back-to-school/8f671b2b-6231-4afb-9cd8-119dc63a0b3a.png",
+          "pdf": "",
+          "title": "Page 13"
+        },
+        {
+          "image": "assets/books/back-to-school/9daa881b-dd2e-4db5-9f87-bb5d7a08c5c7.png",
+          "pdf": "",
+          "title": "Page 14"
+        },
+        {
+          "image": "assets/books/back-to-school/9dfe498e-c888-431c-9c8e-025e9a5e01c6.png",
+          "pdf": "",
+          "title": "Page 15"
+        },
+        {
+          "image": "assets/books/back-to-school/9e982707-ad8f-4926-ae68-a56f0b1d346d.png",
+          "pdf": "",
+          "title": "Page 16"
+        },
+        {
+          "image": "assets/books/back-to-school/9f1de846-14a2-41d1-b7c1-b92b26937cf4.png",
+          "pdf": "",
+          "title": "Page 17"
+        },
+        {
+          "image": "assets/books/back-to-school/10dabfe4-0064-4420-be0b-cbe7d68fc3b1.png",
+          "pdf": "",
+          "title": "Page 18"
+        },
+        {
+          "image": "assets/books/back-to-school/28e69c92-046e-46ae-855a-83044d24dbba.png",
+          "pdf": "",
+          "title": "Page 19"
+        },
+        {
+          "image": "assets/books/back-to-school/41a01a10-5a3c-4ed3-bc92-327deccd51c1.png",
+          "pdf": "",
+          "title": "Page 20"
+        },
+        {
+          "image": "assets/books/back-to-school/125e552d-646e-43bc-8560-4f4675d5a6a1.png",
+          "pdf": "",
+          "title": "Page 21"
+        },
+        {
+          "image": "assets/books/back-to-school/246b03f8-9d52-4f59-87a0-261dab81b065.png",
+          "pdf": "",
+          "title": "Page 22"
+        },
+        {
+          "image": "assets/books/back-to-school/275d830f-39fe-42f0-b591-dc7aed74dbcc.png",
+          "pdf": "",
+          "title": "Page 23"
+        },
+        {
+          "image": "assets/books/back-to-school/0532b1e4-01b0-4286-acaf-5df8163bc37a.png",
+          "pdf": "",
+          "title": "Page 24"
+        },
+        {
+          "image": "assets/books/back-to-school/0578fb4e-d886-4f45-96b6-e8abb39844ff.png",
+          "pdf": "",
+          "title": "Page 25"
+        },
+        {
+          "image": "assets/books/back-to-school/612d22b0-d756-4682-a503-d699ebe24efd.png",
+          "pdf": "",
+          "title": "Page 26"
+        },
+        {
+          "image": "assets/books/back-to-school/657e342b-df19-4379-8fba-8b563ae50de3.png",
+          "pdf": "",
+          "title": "Page 27"
+        },
+        {
+          "image": "assets/books/back-to-school/804b83b1-c065-4c9b-9fac-02859c15be30.png",
+          "pdf": "",
+          "title": "Page 28"
+        },
+        {
+          "image": "assets/books/back-to-school/1162dc99-ee3a-4e2e-bc7d-0cf03082422e.png",
+          "pdf": "",
+          "title": "Page 29"
+        },
+        {
+          "image": "assets/books/back-to-school/1943fec5-d17c-4087-9db6-64167dcb03d9.png",
+          "pdf": "",
+          "title": "Page 30"
+        },
+        {
+          "image": "assets/books/back-to-school/6068b24b-1a2d-49d6-a86c-96c9330be9a5.png",
+          "pdf": "",
+          "title": "Page 31"
+        },
+        {
+          "image": "assets/books/back-to-school/80802b9b-8117-463b-97d7-efeb90fc799e.png",
+          "pdf": "",
+          "title": "Page 32"
+        },
+        {
+          "image": "assets/books/back-to-school/467608f3-0a62-44d7-882b-90c9f76cfdbf.png",
+          "pdf": "",
+          "title": "Page 33"
+        },
+        {
+          "image": "assets/books/back-to-school/2514576c-1683-4d48-9aa6-5f02ad81a1dd.png",
+          "pdf": "",
+          "title": "Page 34"
+        },
+        {
+          "image": "assets/books/back-to-school/64422132-a342-4224-963a-09843782d525.png",
+          "pdf": "",
+          "title": "Page 35"
+        },
+        {
+          "image": "assets/books/back-to-school/a85920bb-fb4f-4a4c-9434-202b735e5a99.png",
+          "pdf": "",
+          "title": "Page 36"
+        },
+        {
+          "image": "assets/books/back-to-school/ab2b44b9-4380-4109-a8c2-377b11c2d42e.png",
+          "pdf": "",
+          "title": "Page 37"
+        },
+        {
+          "image": "assets/books/back-to-school/ad5f658c-14c5-4ab4-8bc7-ba7a9a497463.png",
+          "pdf": "",
+          "title": "Page 38"
+        },
+        {
+          "image": "assets/books/back-to-school/b789c245-0c89-417a-8b21-007fad580271.png",
+          "pdf": "",
+          "title": "Page 39"
+        },
+        {
+          "image": "assets/books/back-to-school/ba63d7ea-94dd-4053-9fa8-8368c5a60aa3.png",
+          "pdf": "",
+          "title": "Page 40"
+        },
+        {
+          "image": "assets/books/back-to-school/bc5c3c29-9ffb-426e-99f7-f1574a443237.png",
+          "pdf": "",
+          "title": "Page 41"
+        },
+        {
+          "image": "assets/books/back-to-school/cd6c252c-a6bb-4b39-bfea-30ddfb15e23a.png",
+          "pdf": "",
+          "title": "Page 42"
+        },
+        {
+          "image": "assets/books/back-to-school/d47d8a72-c0ca-49c1-9130-450ea2c0de95.png",
+          "pdf": "",
+          "title": "Page 43"
+        },
+        {
+          "image": "assets/books/back-to-school/dc5f088f-4919-4045-bc23-21432f10eb01.png",
+          "pdf": "",
+          "title": "Page 44"
+        },
+        {
+          "image": "assets/books/back-to-school/dd8893f8-87f9-4e62-8a8b-261c20c63c0d.png",
+          "pdf": "",
+          "title": "Page 45"
+        },
+        {
+          "image": "assets/books/back-to-school/e840f270-a1e3-47f9-9d1f-818bd7c10561.png",
+          "pdf": "",
+          "title": "Page 46"
+        },
+        {
+          "image": "assets/books/back-to-school/e869bd83-81b8-4891-aca3-6336059899e5.png",
+          "pdf": "",
+          "title": "Page 47"
+        },
+        {
+          "image": "assets/books/back-to-school/f21c30e4-6ab3-470e-a329-746af9ebc41c.png",
+          "pdf": "",
+          "title": "Page 48"
+        },
+        {
+          "image": "assets/books/back-to-school/f34d2b3f-6278-4b84-88ad-bb8f42bb015c.png",
+          "pdf": "",
+          "title": "Page 49"
+        },
+        {
+          "image": "assets/books/back-to-school/fb80371a-07d4-4660-b837-f6ea87ebd811.png",
+          "pdf": "",
+          "title": "Page 50"
+        }
+      ],
+      "name": "back-to-school",
+      "pdf": "assets/books/back-to-school/back_to_school_coloring_book.pdf"
     },
     {
       "cover": "",

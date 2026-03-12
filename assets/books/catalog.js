@@ -54,4 +54,11 @@ window.BOOK_CATALOG = [
     accent: "#6f8b4b",
     tags: ["nature", "mandala", "intricate", "relaxing"],
   },
+  {
+    name: "back-to-school",
+    title: "Back to School",
+    description: "Printable back-to-school coloring pages filled with classroom scenes, school supplies, and first-day fun.",
+    accent: "#4f77b6",
+    tags: ["school", "kids", "classroom", "printable"],
+  },
 ];
