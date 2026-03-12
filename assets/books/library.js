@@ -1,5 +1,5 @@
 window.BOOK_LIBRARY = {
-  "generatedAt": "2026-03-11T12:30:33.598Z",
+  "generatedAt": "2026-03-12T08:37:09.251Z",
   "books": [
     {
       "accent": "#5f8156",
@@ -34,7 +34,7 @@ window.BOOK_LIBRARY = {
       "listingImage": "assets/books/animals-mandala/1a80d086-5c62-4928-92ab-4370ce1f4c85.png",
       "listingImagePreview": "assets/books/animals-mandala/1a80d086-5c62-4928-92ab-4370ce1f4c85.png",
       "name": "animals-mandala",
-      "pageCount": 50,
+      "pageCount": 49,
       "pageUrl": "books/animals-mandala.html",
       "pdf": "assets/books/animals-mandala/animal_mandala_coloring_book.pdf",
       "tags": [
@@ -132,6 +132,28 @@ window.BOOK_LIBRARY = {
         "whimsical"
       ],
       "title": "Magical Creatures for Kids"
+    },
+    {
+      "accent": "#6f8b4b",
+      "cover": "",
+      "coverPreview": "",
+      "description": "Intricate nature-inspired mandala coloring pages collected into a printable coloring book.",
+      "featured": false,
+      "hasExplicitCover": false,
+      "id": "nature-mandala",
+      "listingImage": "assets/books/nature-mandala/mandala_01.png",
+      "listingImagePreview": "assets/books/nature-mandala/mandala_01.png",
+      "name": "nature-mandala",
+      "pageCount": 50,
+      "pageUrl": "books/nature-mandala.html",
+      "pdf": "assets/books/nature-mandala/nature-mandalas.pdf",
+      "tags": [
+        "nature",
+        "mandala",
+        "intricate",
+        "relaxing"
+      ],
+      "title": "Nature Mandalas"
     }
   ]
 };

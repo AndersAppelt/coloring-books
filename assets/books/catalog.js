@@ -47,4 +47,11 @@ window.BOOK_CATALOG = [
     pdf: "magical_creatures_coloring_book.pdf",
     tags: ["magical creatures", "fantasy", "kids", "whimsical"],
   },
+  {
+    name: "nature-mandala",
+    title: "Nature Mandalas",
+    description: "Intricate nature-inspired mandala coloring pages collected into a printable coloring book.",
+    accent: "#6f8b4b",
+    tags: ["nature", "mandala", "intricate", "relaxing"],
+  },
 ];

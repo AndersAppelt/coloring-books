@@ -1,5 +1,5 @@
 window.BOOK_ASSET_MANIFEST = {
-  "generatedAt": "2026-03-11T12:30:33.598Z",
+  "generatedAt": "2026-03-12T08:37:09.251Z",
   "themes": [
     {
       "cover": "",
@@ -734,34 +734,29 @@ window.BOOK_ASSET_MANIFEST = {
           "title": "Page 44"
         },
         {
-          "image": "assets/books/animals-mandala/e9199abc-7bc9-48f7-8327-2d0fc716e6f6.png",
+          "image": "assets/books/animals-mandala/ea1e2795-6301-4c28-9fbd-4c32b561b5aa.png",
           "pdf": "",
           "title": "Page 45"
         },
         {
-          "image": "assets/books/animals-mandala/ea1e2795-6301-4c28-9fbd-4c32b561b5aa.png",
+          "image": "assets/books/animals-mandala/ed3e65d7-7e70-4164-9501-d47e0e44f469.png",
           "pdf": "",
           "title": "Page 46"
         },
         {
-          "image": "assets/books/animals-mandala/ed3e65d7-7e70-4164-9501-d47e0e44f469.png",
+          "image": "assets/books/animals-mandala/eda5d58c-05c4-40c8-83a3-a665406825fa.png",
           "pdf": "",
           "title": "Page 47"
         },
         {
-          "image": "assets/books/animals-mandala/eda5d58c-05c4-40c8-83a3-a665406825fa.png",
+          "image": "assets/books/animals-mandala/f29997e2-25cb-4fb0-a4fe-ad8b32036e4c.png",
           "pdf": "",
           "title": "Page 48"
         },
         {
-          "image": "assets/books/animals-mandala/f29997e2-25cb-4fb0-a4fe-ad8b32036e4c.png",
-          "pdf": "",
-          "title": "Page 49"
-        },
-        {
           "image": "assets/books/animals-mandala/f4842401-caa5-44a7-bc53-3fb0c2742878.png",
           "pdf": "",
-          "title": "Page 50"
+          "title": "Page 49"
         }
       ],
       "name": "animals-mandala",
@@ -1718,6 +1713,264 @@ window.BOOK_ASSET_MANIFEST = {
       ],
       "name": "magical-creatures-kids",
       "pdf": "assets/books/magical-creatures-kids/magical_creatures_coloring_book.pdf"
+    },
+    {
+      "cover": "",
+      "hasExplicitCover": false,
+      "items": [
+        {
+          "image": "assets/books/nature-mandala/mandala_01.png",
+          "pdf": "",
+          "title": "Mandala 01"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_02.png",
+          "pdf": "",
+          "title": "Mandala 02"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_03.png",
+          "pdf": "",
+          "title": "Mandala 03"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_04.png",
+          "pdf": "",
+          "title": "Mandala 04"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_05.png",
+          "pdf": "",
+          "title": "Mandala 05"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_06.png",
+          "pdf": "",
+          "title": "Mandala 06"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_07.png",
+          "pdf": "",
+          "title": "Mandala 07"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_08.png",
+          "pdf": "",
+          "title": "Mandala 08"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_09.png",
+          "pdf": "",
+          "title": "Mandala 09"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_10.png",
+          "pdf": "",
+          "title": "Mandala 10"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_11.png",
+          "pdf": "",
+          "title": "Mandala 11"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_12.png",
+          "pdf": "",
+          "title": "Mandala 12"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_13.png",
+          "pdf": "",
+          "title": "Mandala 13"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_14.png",
+          "pdf": "",
+          "title": "Mandala 14"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_15.png",
+          "pdf": "",
+          "title": "Mandala 15"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_16.png",
+          "pdf": "",
+          "title": "Mandala 16"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_17.png",
+          "pdf": "",
+          "title": "Mandala 17"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_18.png",
+          "pdf": "",
+          "title": "Mandala 18"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_19.png",
+          "pdf": "",
+          "title": "Mandala 19"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_20.png",
+          "pdf": "",
+          "title": "Mandala 20"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_21.png",
+          "pdf": "",
+          "title": "Mandala 21"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_22.png",
+          "pdf": "",
+          "title": "Mandala 22"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_23.png",
+          "pdf": "",
+          "title": "Mandala 23"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_24.png",
+          "pdf": "",
+          "title": "Mandala 24"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_25.png",
+          "pdf": "",
+          "title": "Mandala 25"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_26.png",
+          "pdf": "",
+          "title": "Mandala 26"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_27.png",
+          "pdf": "",
+          "title": "Mandala 27"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_28.png",
+          "pdf": "",
+          "title": "Mandala 28"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_29.png",
+          "pdf": "",
+          "title": "Mandala 29"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_30.png",
+          "pdf": "",
+          "title": "Mandala 30"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_31.png",
+          "pdf": "",
+          "title": "Mandala 31"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_32.png",
+          "pdf": "",
+          "title": "Mandala 32"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_33.png",
+          "pdf": "",
+          "title": "Mandala 33"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_34.png",
+          "pdf": "",
+          "title": "Mandala 34"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_35.png",
+          "pdf": "",
+          "title": "Mandala 35"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_36.png",
+          "pdf": "",
+          "title": "Mandala 36"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_37.png",
+          "pdf": "",
+          "title": "Mandala 37"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_38.png",
+          "pdf": "",
+          "title": "Mandala 38"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_39.png",
+          "pdf": "",
+          "title": "Mandala 39"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_40.png",
+          "pdf": "",
+          "title": "Mandala 40"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_41.png",
+          "pdf": "",
+          "title": "Mandala 41"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_42.png",
+          "pdf": "",
+          "title": "Mandala 42"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_43.png",
+          "pdf": "",
+          "title": "Mandala 43"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_44.png",
+          "pdf": "",
+          "title": "Mandala 44"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_45.png",
+          "pdf": "",
+          "title": "Mandala 45"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_46.png",
+          "pdf": "",
+          "title": "Mandala 46"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_47.png",
+          "pdf": "",
+          "title": "Mandala 47"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_48.png",
+          "pdf": "",
+          "title": "Mandala 48"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_49.png",
+          "pdf": "",
+          "title": "Mandala 49"
+        },
+        {
+          "image": "assets/books/nature-mandala/mandala_50.png",
+          "pdf": "",
+          "title": "Mandala 50"
+        }
+      ],
+      "name": "nature-mandala",
+      "pdf": "assets/books/nature-mandala/nature-mandalas.pdf"
     }
   ]
 };
