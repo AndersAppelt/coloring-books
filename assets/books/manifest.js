@@ -1,5 +1,5 @@
 window.BOOK_ASSET_MANIFEST = {
-  "generatedAt": "2026-03-12T08:37:09.251Z",
+  "generatedAt": "2026-03-12T08:45:13.238Z",
   "themes": [
     {
       "cover": "",
@@ -1962,11 +1962,6 @@ window.BOOK_ASSET_MANIFEST = {
           "image": "assets/books/nature-mandala/mandala_49.png",
           "pdf": "",
           "title": "Mandala 49"
-        },
-        {
-          "image": "assets/books/nature-mandala/mandala_50.png",
-          "pdf": "",
-          "title": "Mandala 50"
         }
       ],
       "name": "nature-mandala",

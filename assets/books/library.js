@@ -1,5 +1,5 @@
 window.BOOK_LIBRARY = {
-  "generatedAt": "2026-03-12T08:37:09.251Z",
+  "generatedAt": "2026-03-12T08:45:13.238Z",
   "books": [
     {
       "accent": "#5f8156",
@@ -144,7 +144,7 @@ window.BOOK_LIBRARY = {
       "listingImage": "assets/books/nature-mandala/mandala_01.png",
       "listingImagePreview": "assets/books/nature-mandala/mandala_01.png",
       "name": "nature-mandala",
-      "pageCount": 50,
+      "pageCount": 49,
       "pageUrl": "books/nature-mandala.html",
       "pdf": "assets/books/nature-mandala/nature-mandalas.pdf",
       "tags": [
