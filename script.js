@@ -11,6 +11,7 @@ const AD_INIT_RETRY_DELAY_MS = 400;
 const AD_INIT_MAX_ATTEMPTS = 20;
 let adInitAttempts = 0;
 let adInitRetryTimer = null;
+let isAdsScriptLoadBound = false;
 
 const elements = {
   bookCount: doc?.getElementById("themeCount") || null,
@@ -384,11 +385,11 @@ function bindAdsScriptLoad() {
   }
 
   const adScript = doc.querySelector('script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]');
-  if (!adScript || adScript.dataset.adsLoadBound === "true") {
+  if (!adScript || isAdsScriptLoadBound) {
     return;
   }
 
-  adScript.dataset.adsLoadBound = "true";
+  isAdsScriptLoadBound = true;
   adScript.addEventListener("load", initializeAds, { once: true });
 }
 
