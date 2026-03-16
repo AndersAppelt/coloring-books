@@ -7,6 +7,11 @@ const state = {
   query: "",
 };
 
+const AD_INIT_RETRY_DELAY_MS = 400;
+const AD_INIT_MAX_ATTEMPTS = 20;
+let adInitAttempts = 0;
+let adInitRetryTimer = null;
+
 const elements = {
   bookCount: doc?.getElementById("themeCount") || null,
   booksContainer: doc?.getElementById("booksContainer") || null,
@@ -28,6 +33,7 @@ function init() {
   renderFilters();
   renderLibrary();
   observeReveals();
+  bindAdsScriptLoad();
   initializeAds();
 }
 
@@ -343,22 +349,68 @@ function observeReveals() {
 }
 
 function initializeAds() {
-  if (!doc || !globalWindow.adsbygoogle) {
+  if (!doc) {
     return;
   }
 
-  doc.querySelectorAll("ins.adsbygoogle").forEach((element) => {
-    if (element.dataset.adsInitialized === "true") {
-      return;
-    }
+  const uninitializedAds = Array.from(doc.querySelectorAll("ins.adsbygoogle")).filter(
+    (element) => element.dataset.adsInitialized !== "true"
+  );
 
+  if (!uninitializedAds.length) {
+    clearAdsRetryTimer();
+    return;
+  }
+
+  if (!globalWindow.adsbygoogle || typeof globalWindow.adsbygoogle.push !== "function") {
+    scheduleAdsRetry();
+    return;
+  }
+
+  uninitializedAds.forEach((element) => {
     try {
       (globalWindow.adsbygoogle = globalWindow.adsbygoogle || []).push({});
       element.dataset.adsInitialized = "true";
+      adInitAttempts = 0;
     } catch (error) {
       // Ignore duplicate initialization attempts for generated pages.
     }
   });
+}
+
+function bindAdsScriptLoad() {
+  if (!doc) {
+    return;
+  }
+
+  const adScript = doc.querySelector('script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]');
+  if (!adScript || adScript.dataset.adsLoadBound === "true") {
+    return;
+  }
+
+  adScript.dataset.adsLoadBound = "true";
+  adScript.addEventListener("load", initializeAds, { once: true });
+}
+
+function clearAdsRetryTimer() {
+  if (!adInitRetryTimer) {
+    return;
+  }
+
+  globalWindow.clearTimeout(adInitRetryTimer);
+  adInitRetryTimer = null;
+}
+
+function scheduleAdsRetry() {
+  if (adInitRetryTimer || adInitAttempts >= AD_INIT_MAX_ATTEMPTS) {
+    return;
+  }
+
+  adInitRetryTimer = globalWindow.setTimeout(() => {
+    adInitRetryTimer = null;
+    adInitAttempts += 1;
+    initializeAds();
+  }, AD_INIT_RETRY_DELAY_MS);
 }
 
 function escapeHtml(value) {
