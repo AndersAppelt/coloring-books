@@ -15,6 +15,10 @@ const BOOK_PDF_HINTS = ["book", "collection", "pages", "printable", "full"];
 const PLACEHOLDER_HINTS = ["placeholder", "sample", "thumbs.db", ".ds_store"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const INLINE_AD_INTERVAL = 6;
+const ADSENSE_CLIENT_ID = "ca-pub-5769214634246614";
+const ADSENSE_GALLERY_SLOT_ID = "4337077351";
+const ADSENSE_SIDEBAR_SLOT_ID = "5651861747";
+const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
 const DEFAULT_DIST_EXTERNAL_ASSET_BASE_URL = "https://raw.githubusercontent.com/AndersAppelt/coloring-books/main/";
 const DEFAULT_VECTOR_OUTPUT_SUBDIR = "svg";
 
@@ -806,6 +810,8 @@ function renderBookPage(book) {
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Coloring Library" />
     <meta property="og:title" content="${escapeAttribute(pageTitle)}" />
+    <meta name="google-adsense-account" content="${ADSENSE_CLIENT_ID}" />
+    <script async src="${ADSENSE_SCRIPT_SRC}" crossorigin="anonymous"></script>
     <meta property="og:description" content="${escapeAttribute(pageDescription)}" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${escapeAttribute(pageTitle)}" />
@@ -894,10 +900,14 @@ function renderBookPage(book) {
                 <div class="ad-slot__inner">
                   <span class="ad-slot__label">Sponsored</span>
                   <div class="ad-slot__box ad-slot__box--sidebar">
-                    <div>
-                      <p>Advertisement</p>
-                      <small>Reserved sidebar placement for Google AdSense on book pages.</small>
-                    </div>
+                    <ins
+                      class="adsbygoogle"
+                      style="display: block"
+                      data-ad-client="${ADSENSE_CLIENT_ID}"
+                      data-ad-slot="${ADSENSE_SIDEBAR_SLOT_ID}"
+                      data-ad-format="auto"
+                      data-full-width-responsive="true"
+                    ></ins>
                   </div>
                 </div>
               </aside>
@@ -1031,10 +1041,14 @@ function renderInlineGalleryAd(position) {
       <div class="ad-slot__inner">
         <span class="ad-slot__label">Sponsored</span>
         <div class="ad-slot__box ad-slot__box--gallery">
-          <div>
-            <p>Advertisement</p>
-            <small>Reserved Google AdSense placement after every 6 images.</small>
-          </div>
+          <ins
+            class="adsbygoogle"
+            style="display: block"
+            data-ad-client="${ADSENSE_CLIENT_ID}"
+            data-ad-slot="${ADSENSE_GALLERY_SLOT_ID}"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          ></ins>
         </div>
       </div>
     </aside>

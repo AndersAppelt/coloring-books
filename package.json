@@ -6,6 +6,7 @@
     "build:dist": "node scripts/build-dist.js",
     "build:dist-svg": "node scripts/build-dist-svg.js",
     "build:svg-local": "node scripts/build-svg-local.js",
+    "serve": "python3 -m http.server 8080",
     "test": "node --test"
   },
   "devDependencies": {

@@ -21,6 +21,11 @@ const {
 const { buildPrintPageUrl } = require("../book-page");
 const { renderBookCard, renderSpotlightCard, selectSpotlightBook } = require("../script");
 
+const ADSENSE_CLIENT_ID = "ca-pub-5769214634246614";
+const ADSENSE_BANNER_SLOT_ID = "7050870605";
+const ADSENSE_SIDEBAR_SLOT_ID = "5651861747";
+const ADSENSE_GALLERY_SLOT_ID = "4337077351";
+
 test("thumbnail path helpers prefer webp previews only for supported raster images", () => {
   assert.equal(
     getThumbnailAssetPath("assets/books/test-book/page-01.png"),
@@ -120,6 +125,10 @@ test("local and dist builds emit the expected preview/original image references"
     assert.equal(localFallbackBook.listingImagePreview, "assets/books/sample-book/page-01.png");
     assert.match(localBookPage, /data-preview-image="\.\.\/assets\/books\/test-book\/page-01\.png"/);
     assert.match(localBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
+    assert.match(localBookPage, new RegExp(`google-adsense-account\" content=\"${ADSENSE_CLIENT_ID}`));
+    assert.match(localBookPage, new RegExp(`adsbygoogle\\.js\\?client=${ADSENSE_CLIENT_ID}`));
+    assert.match(localBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_SIDEBAR_SLOT_ID}\"`));
+    assert.match(localBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_GALLERY_SLOT_ID}\"`));
     assert.match(localFallbackBookPage, /src="\.\.\/assets\/books\/sample-book\/page-01\.png"/);
     assert.match(localFallbackBookPage, /alt="Sample Book cover"/);
     assert.doesNotMatch(localBookPage, /data-download-pdf/);
@@ -168,6 +177,10 @@ test("local and dist builds emit the expected preview/original image references"
       /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/page-01\.png" data-preview-trigger data-preview-image="\.\.\/assets\/books\/test-book\/thumbs\/page-01\.webp"/
     );
     assert.match(distBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
+    assert.match(distBookPage, new RegExp(`google-adsense-account\" content=\"${ADSENSE_CLIENT_ID}`));
+    assert.match(distBookPage, new RegExp(`adsbygoogle\\.js\\?client=${ADSENSE_CLIENT_ID}`));
+    assert.match(distBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_SIDEBAR_SLOT_ID}\"`));
+    assert.match(distBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_GALLERY_SLOT_ID}\"`));
     assert.match(
       distBookPage,
       /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/book\.pdf" download>Download full book<\/a>/
@@ -327,6 +340,8 @@ test("homepage markup and renderers target the hero spotlight with listing image
   assert.match(indexSource, /id="spotlight"/);
   assert.match(indexSource, /id="spotlightContent"/);
   assert.match(indexSource, /href="#spotlight"/);
+  assert.match(indexSource, new RegExp(`data-ad-slot="${ADSENSE_BANNER_SLOT_ID}"`));
+  assert.match(indexSource, new RegExp(`adsbygoogle\\.js\\?client=${ADSENSE_CLIENT_ID}`));
   assert.doesNotMatch(indexSource, /id="featured"/);
 
   const spotlightMarkup = renderSpotlightCard(sampleBook);
@@ -400,6 +415,12 @@ async function createFixtureProject(projectRoot) {
 
   await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "cover.png"));
   await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "page-01.png"));
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "page-02.png"));
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "page-03.png"));
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "page-04.png"));
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "page-05.png"));
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "page-06.png"));
+  await writeFixturePng(path.join(projectRoot, "assets", "books", "test-book", "page-07.png"));
   await fs.writeFile(path.join(projectRoot, "assets", "books", "test-book", "page-01.pdf"), "%PDF-1.4 fixture\n", "utf8");
   await fs.writeFile(path.join(projectRoot, "assets", "books", "test-book", "book.pdf"), "%PDF-1.4 fixture\n", "utf8");
 

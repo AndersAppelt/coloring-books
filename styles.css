@@ -749,6 +749,10 @@ img {
   display: block;
 }
 
+.ad-slot__box .adsbygoogle {
+  width: 100%;
+}
+
 .book-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
