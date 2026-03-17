@@ -18,13 +18,13 @@ const {
   resolvePreviewAssetPath,
   resolveVectorizedAssetPath,
 } = require("../scripts/build-site");
+const adsConfig = require("../ads-config");
 const { buildPrintPageUrl } = require("../book-page");
 const { renderBookCard, renderSpotlightCard, selectSpotlightBook } = require("../script");
 
-const ADSENSE_CLIENT_ID = "ca-pub-5769214634246614";
-const ADSENSE_BANNER_SLOT_ID = "7050870605";
-const ADSENSE_SIDEBAR_SLOT_ID = "5651861747";
-const ADSENSE_GALLERY_SLOT_ID = "4337077351";
+const ADSENSE_BANNER_SLOT_ID = adsConfig.slots.banner;
+const ADSENSE_SIDEBAR_SLOT_ID = adsConfig.slots.sidebar;
+const ADSENSE_GALLERY_SLOT_ID = adsConfig.slots.gallery;
 
 test("thumbnail path helpers prefer webp previews only for supported raster images", () => {
   assert.equal(
@@ -125,8 +125,9 @@ test("local and dist builds emit the expected preview/original image references"
     assert.equal(localFallbackBook.listingImagePreview, "assets/books/sample-book/page-01.png");
     assert.match(localBookPage, /data-preview-image="\.\.\/assets\/books\/test-book\/page-01\.png"/);
     assert.match(localBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
-    assert.match(localBookPage, new RegExp(`google-adsense-account\" content=\"${ADSENSE_CLIENT_ID}`));
-    assert.match(localBookPage, new RegExp(`adsbygoogle\\.js\\?client=${ADSENSE_CLIENT_ID}`));
+    assert.match(localBookPage, /<script src="\.\.\/ads-config\.js"><\/script>/);
+    assert.match(localBookPage, /<script src="\.\.\/adsense-bootstrap\.js"><\/script>/);
+    assert.doesNotMatch(localBookPage, /adsbygoogle\.js\?client=/);
     assert.match(localBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_SIDEBAR_SLOT_ID}\"`));
     assert.match(localBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_GALLERY_SLOT_ID}\"`));
     assert.match(localFallbackBookPage, /src="\.\.\/assets\/books\/sample-book\/page-01\.png"/);
@@ -177,8 +178,9 @@ test("local and dist builds emit the expected preview/original image references"
       /href="https:\/\/raw\.githubusercontent\.com\/example\/coloring-books\/main\/assets\/books\/test-book\/page-01\.png" data-preview-trigger data-preview-image="\.\.\/assets\/books\/test-book\/thumbs\/page-01\.webp"/
     );
     assert.match(distBookPage, /data-print-image target="_blank" rel="noopener">Print<\/a>/);
-    assert.match(distBookPage, new RegExp(`google-adsense-account\" content=\"${ADSENSE_CLIENT_ID}`));
-    assert.match(distBookPage, new RegExp(`adsbygoogle\\.js\\?client=${ADSENSE_CLIENT_ID}`));
+    assert.match(distBookPage, /<script src="\.\.\/ads-config\.js"><\/script>/);
+    assert.match(distBookPage, /<script src="\.\.\/adsense-bootstrap\.js"><\/script>/);
+    assert.doesNotMatch(distBookPage, /adsbygoogle\.js\?client=/);
     assert.match(distBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_SIDEBAR_SLOT_ID}\"`));
     assert.match(distBookPage, new RegExp(`data-ad-slot=\"${ADSENSE_GALLERY_SLOT_ID}\"`));
     assert.match(
@@ -187,6 +189,7 @@ test("local and dist builds emit the expected preview/original image references"
     );
 
     await fs.access(path.join(distOutputRoot, "print-image.html"));
+    await fs.access(path.join(distOutputRoot, "ads.txt"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "thumbs", "cover.webp"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "test-book", "thumbs", "page-01.webp"));
     await fs.access(path.join(distOutputRoot, "assets", "books", "sample-book", "thumbs", "page-01.webp"));
@@ -341,7 +344,9 @@ test("homepage markup and renderers target the hero spotlight with listing image
   assert.match(indexSource, /id="spotlightContent"/);
   assert.match(indexSource, /href="#spotlight"/);
   assert.match(indexSource, new RegExp(`data-ad-slot="${ADSENSE_BANNER_SLOT_ID}"`));
-  assert.match(indexSource, new RegExp(`adsbygoogle\\.js\\?client=${ADSENSE_CLIENT_ID}`));
+  assert.match(indexSource, /<script src="ads-config\.js"><\/script>/);
+  assert.match(indexSource, /<script src="adsense-bootstrap\.js"><\/script>/);
+  assert.doesNotMatch(indexSource, /adsbygoogle\.js\?client=/);
   assert.doesNotMatch(indexSource, /id="featured"/);
 
   const spotlightMarkup = renderSpotlightCard(sampleBook);
@@ -362,6 +367,9 @@ async function createFixtureProject(projectRoot) {
   await fs.mkdir(path.join(projectRoot, "scripts"), { recursive: true });
 
   const staticFiles = {
+    "ads-config.js": "module.exports = { clientId: \"ca-pub-fixture\", slots: { banner: \"1\", gallery: \"2\", sidebar: \"3\" } };\n",
+    "adsense-bootstrap.js": "window.ColoringAds = { refresh: () => {} };\n",
+    "ads.txt": "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n",
     "index.html": "<!DOCTYPE html><html><head></head><body></body></html>\n",
     "styles.css": "body { font-family: sans-serif; }\n",
     "script.js": "console.log('home');\n",

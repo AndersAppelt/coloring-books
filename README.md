@@ -106,13 +106,11 @@ That writes a fresh `dist/` folder, generates SVG image assets under `dist/asset
 
 ## AdSense notes
 
-The site includes reserved placeholders for Google AdSense.
-
-To connect real ads:
-1. Add the AdSense script tag to the relevant page head.
-2. Replace the placeholder ad block with your real `<ins class="adsbygoogle">` markup.
-3. Keep separate slot markup if you want different IDs for homepage banner, sidebar ads, and inline gallery ads.
-4. The homepage and generated book pages already include JavaScript that can initialize `ins.adsbygoogle` blocks.
+AdSense setup is centralized:
+1. `ads-config.js` is the single source of truth for client ID, slots, and runtime settings.
+2. `adsense-bootstrap.js` injects/ensures the AdSense head tags and initializes every `<ins class="adsbygoogle">` block.
+3. Homepage and generated book pages include the shared bootstrap scripts automatically.
+4. `ads.txt` is versioned at the repo root and copied to deploy output.
 
 ## Why the spotlight issue happened before
 

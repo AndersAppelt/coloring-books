@@ -1,16 +1,9 @@
-const AD_INIT_RETRY_DELAY_MS = 400;
-const AD_INIT_MAX_ATTEMPTS = 20;
-let adInitAttempts = 0;
-let adInitRetryTimer = null;
-let isAdsScriptLoadBound = false;
-
 if (typeof document !== "undefined") {
   document.addEventListener("DOMContentLoaded", () => {
     window.ColoringImageFallbacks?.initialize(document);
     observeReveals();
     initializePreviewDialog();
-    bindAdsScriptLoad();
-    initializeAds();
+    window.ColoringAds?.refresh();
   });
 }
 
@@ -118,63 +111,6 @@ function buildPrintPageUrl(imageHref, imageTitle) {
   }
 
   return printUrl.toString();
-}
-
-function initializeAds() {
-  const uninitializedAds = Array.from(document.querySelectorAll("ins.adsbygoogle")).filter(
-    (element) => element.dataset.adsInitialized !== "true"
-  );
-
-  if (!uninitializedAds.length) {
-    clearAdsRetryTimer();
-    return;
-  }
-
-  if (!window.adsbygoogle || typeof window.adsbygoogle.push !== "function") {
-    scheduleAdsRetry();
-    return;
-  }
-
-  uninitializedAds.forEach((element) => {
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-      element.dataset.adsInitialized = "true";
-      adInitAttempts = 0;
-    } catch (error) {
-      // Ignore duplicate initialization attempts for generated pages.
-    }
-  });
-}
-
-function bindAdsScriptLoad() {
-  const adScript = document.querySelector('script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]');
-  if (!adScript || isAdsScriptLoadBound) {
-    return;
-  }
-
-  isAdsScriptLoadBound = true;
-  adScript.addEventListener("load", initializeAds, { once: true });
-}
-
-function clearAdsRetryTimer() {
-  if (!adInitRetryTimer) {
-    return;
-  }
-
-  window.clearTimeout(adInitRetryTimer);
-  adInitRetryTimer = null;
-}
-
-function scheduleAdsRetry() {
-  if (adInitRetryTimer || adInitAttempts >= AD_INIT_MAX_ATTEMPTS) {
-    return;
-  }
-
-  adInitRetryTimer = window.setTimeout(() => {
-    adInitRetryTimer = null;
-    adInitAttempts += 1;
-    initializeAds();
-  }, AD_INIT_RETRY_DELAY_MS);
 }
 
 if (typeof module !== "undefined") {

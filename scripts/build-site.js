@@ -1,9 +1,21 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const adsConfig = require("../ads-config");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const STATIC_FILES = ["index.html", "styles.css", "script.js", "book-page.js", "image-fallback.js", "print-image.html", "favicon.svg"];
+const STATIC_FILES = [
+  "ads-config.js",
+  "adsense-bootstrap.js",
+  "ads.txt",
+  "index.html",
+  "styles.css",
+  "script.js",
+  "book-page.js",
+  "image-fallback.js",
+  "print-image.html",
+  "favicon.svg",
+];
 
 const FALLBACK_ACCENTS = ["#d86d4c", "#5e7f63", "#3a7d80", "#c38a3f", "#9b5d7b"];
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -15,10 +27,9 @@ const BOOK_PDF_HINTS = ["book", "collection", "pages", "printable", "full"];
 const PLACEHOLDER_HINTS = ["placeholder", "sample", "thumbs.db", ".ds_store"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const INLINE_AD_INTERVAL = 6;
-const ADSENSE_CLIENT_ID = "ca-pub-5769214634246614";
-const ADSENSE_GALLERY_SLOT_ID = "4337077351";
-const ADSENSE_SIDEBAR_SLOT_ID = "5651861747";
-const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
+const ADSENSE_CLIENT_ID = adsConfig.clientId;
+const ADSENSE_GALLERY_SLOT_ID = adsConfig.slots.gallery;
+const ADSENSE_SIDEBAR_SLOT_ID = adsConfig.slots.sidebar;
 const DEFAULT_DIST_EXTERNAL_ASSET_BASE_URL = "https://raw.githubusercontent.com/AndersAppelt/coloring-books/main/";
 const DEFAULT_VECTOR_OUTPUT_SUBDIR = "svg";
 
@@ -810,8 +821,6 @@ function renderBookPage(book) {
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Coloring Library" />
     <meta property="og:title" content="${escapeAttribute(pageTitle)}" />
-    <meta name="google-adsense-account" content="${ADSENSE_CLIENT_ID}" />
-    <script async src="${ADSENSE_SCRIPT_SRC}" crossorigin="anonymous"></script>
     <meta property="og:description" content="${escapeAttribute(pageDescription)}" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${escapeAttribute(pageTitle)}" />
@@ -919,6 +928,8 @@ function renderBookPage(book) {
 
     ${renderPreviewDialog()}
 
+    <script src="../ads-config.js"></script>
+    <script src="../adsense-bootstrap.js"></script>
     <script src="../image-fallback.js"></script>
     <script src="../book-page.js"></script>
   </body>
